@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner Presensi - HaiMoment</title>
+  <link rel="icon" href="logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+    .d-none { display: none !important; }
+    .inp { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.6rem; font-size: 0.95rem; outline: none; background: #fff; }
+    .inp:focus { box-shadow: 0 0 0 2px #93c5fd; border-color: #3b82f6; }
+    .tab { flex: 1; padding: 0.6rem 0.25rem; font-size: 0.8rem; font-weight: 600; color: #64748b; border-bottom: 3px solid transparent; }
+    .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+    #camWrap { position: relative; background: #0f172a; border-radius: 1rem; overflow: hidden; aspect-ratio: 1 / 1; }
+    #camVideo { width: 100%; height: 100%; object-fit: cover; }
+    #camFrame { position: absolute; inset: 18%; border: 3px solid rgba(255,255,255,.85); border-radius: 1rem; box-shadow: 0 0 0 999px rgba(15,23,42,.35); pointer-events: none; }
+    .res-ok { background: #16a34a; }
+    .res-already { background: #d97706; }
+    .res-notfound { background: #dc2626; }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+  
+
+  <!-- PIN -->
+  <section id="pinPage" class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl p-7 text-center">
+      <img src="logo.png" alt="Logo" class="inline-block w-20 h-20 object-contain mb-2">
+      <h1 class="text-xl font-bold">Scanner Presensi</h1>
+      <p class="text-sm text-slate-500 mt-1 mb-6">Masukkan PIN dari pemilik acara.</p>
+      <form id="formPin" class="space-y-4">
+        <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN" class="inp text-center text-2xl tracking-[0.5em] font-bold">
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl"><i class="fas fa-unlock mr-1"></i> Masuk</button>
+      </form>
+      <p id="pinMsg" class="text-sm text-red-600 mt-4"></p>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <section id="mainPage" class="d-none max-w-lg mx-auto min-h-screen bg-white shadow-sm flex flex-col">
+    <header class="px-4 pt-4 pb-3 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <img src="logo.png" alt="Logo" class="w-10 h-10 object-contain">
+        <div class="min-w-0 flex-grow">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Presensi Tamu</p>
+          <h1 id="hdrAcara" class="font-bold truncate">-</h1>
+        </div>
+        <button id="btnRefresh" class="text-slate-400 hover:text-blue-600 p-2" title="Muat ulang data"><i class="fas fa-rotate"></i></button>
+        <button id="btnLogoutScan" class="text-slate-400 hover:text-red-500 p-2" title="Keluar"><i class="fas fa-right-from-bracket"></i></button>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+        <div class="bg-green-50 rounded-lg py-1.5"><p class="text-[10px] uppercase font-semibold text-green-700">Hadir</p><p id="stHadir" class="text-lg font-bold text-green-700">0</p></div>
+        <div class="bg-slate-50 rounded-lg py-1.5"><p class="text-[10px] uppercase font-semibold text-slate-500">Belum</p><p id="stBelum" class="text-lg font-bold text-slate-700">0</p></div>
+        <div class="bg-indigo-50 rounded-lg py-1.5"><p class="text-[10px] uppercase font-semibold text-indigo-600">Walk-in</p><p id="stWalkin" class="text-lg font-bold text-indigo-600">0</p></div>
+      </div>
+    </header>
+
+    <nav class="flex border-b border-slate-100 sticky top-0 bg-white z-10">
+      <button class="tab active" data-tab="scan"><i class="fas fa-qrcode mr-1"></i> Scan QR</button>
+      <button class="tab" data-tab="cari"><i class="fas fa-search mr-1"></i> Cari Nama</button>
+      <button class="tab" data-tab="walkin"><i class="fas fa-user-plus mr-1"></i> Walk-in</button>
+    </nav>
+
+    <div class="p-4 flex-grow">
+      <!-- TAB SCAN -->
+      <div id="tab-scan" class="space-y-3">
+        <div id="camWrap">
+          <video id="camVideo" playsinline muted></video>
+          <div id="camFrame" class="d-none"></div>
+          <div id="camIdle" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-slate-300">
+            <i class="fas fa-camera text-4xl mb-3"></i>
+            <button id="btnCamStart" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl"><i class="fas fa-play mr-1"></i> Nyalakan Kamera</button>
+            <p id="camMsg" class="text-xs mt-3 text-slate-400"></p>
+          </div>
+        </div>
+        <canvas id="camCanvas" class="d-none"></canvas>
+        <div class="flex gap-2">
+          <button id="btnCamStop" class="d-none flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-sm font-medium"><i class="fas fa-stop mr-1"></i> Matikan Kamera</button>
+          <input type="file" id="filePhoto" accept="image/*" capture="environment" class="hidden">
+          <button id="btnPhoto" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-sm font-medium"><i class="fas fa-image mr-1"></i> Scan dari Foto</button>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1"><i class="fas fa-barcode mr-1"></i> Scanner USB / Bluetooth</label>
+          <input id="usbInput" class="inp text-sm" autocomplete="off" placeholder="Klik di sini, lalu scan QR dengan alat scanner">
+        </div>
+      </div>
+
+      <!-- TAB CARI -->
+      <div id="tab-cari" class="d-none space-y-3">
+        <div class="relative"><input id="searchInput" class="inp pl-9" placeholder="Ketik nama tamu..." autocomplete="off"><i class="fas fa-search absolute left-3 top-3.5 text-slate-400"></i></div>
+        <div id="searchList" class="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden"></div>
+        <p class="text-[11px] text-slate-400 text-center">Tidak ada di daftar? Pakai tab <b>Walk-in</b>.</p>
+      </div>
+
+      <!-- TAB WALK-IN -->
+      <div id="tab-walkin" class="d-none">
+        <form id="formWalkin" class="space-y-3">
+          <p class="text-sm text-slate-500">Untuk tamu yang datang tanpa QR dan namanya tidak ada di daftar. Tamu langsung tercatat <b>hadir</b>.</p>
+          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Nama Tamu <span class="text-red-500">*</span></label><input id="wkNama" class="inp" maxlength="150" required></div>
+          <div><label class="block text-xs font-semibold text-slate-600 mb-1">No. WhatsApp <span class="text-slate-400 font-normal">(opsional)</span></label><input id="wkPhone" class="inp" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan <span class="text-slate-400 font-normal">(opsional)</span></label><input id="wkKet" class="inp" maxlength="300" placeholder="Cth: Teman kantor, Keluarga"></div>
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl"><i class="fas fa-user-check mr-1"></i> Tambah &amp; Tandai Hadir</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- HASIL SCAN -->
+  <div id="resultOverlay" class="d-none fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 p-3">
+    <div class="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl bg-white">
+      <div id="resHead" class="px-5 py-5 text-white text-center">
+        <i id="resIcon" class="fas fa-circle-check text-4xl"></i>
+        <p id="resTitle" class="text-sm font-semibold uppercase tracking-wider mt-2"></p>
+        <p id="resNama" class="text-2xl font-bold mt-1 break-words"></p>
+        <p id="resKet" class="text-sm opacity-90"></p>
+      </div>
+      <div id="resBody" class="p-4 space-y-2"></div>
+      <div class="px-4 pb-4 flex gap-2">
+        <button id="resClose" class="flex-1 bg-slate-800 text-white font-semibold py-3 rounded-xl">Lanjut Scan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loader" class="d-none fixed inset-0 z-[60] bg-white/60 flex items-center justify-center"><div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div></div>
+
+<script>
+(function() {
+  'use strict';
+  const $ = function(id) { return document.getElementById(id); };
+  // Versi GitHub Pages: token dari ?t=, server = web app Apps Script (bisa di-override lewat ?api=)
+  const PARAMS = new URLSearchParams(location.search);
+  const TOK = PARAMS.get('t') || '';
+  const API = PARAMS.get('api') || 'https://script.google.com/macros/s/AKfycbxtaeNS5hc3PEGmX7cjoM4Aa6HWpyPZLrxXKJVlmfvrfTJPcE0MskIc-Zop03eLvcH-0g/exec';
+  const STORE = 'pscan_' + TOK;
+  let sess = null, guests = [], info = {}, scanning = false, stream = null, lastText = '', lastAt = 0, busy = false, resultTimer = null;
+
+  function escapeHTML(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function jam(ts) { const m = String(ts || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + '.' + m[2] : ''; }
+  function store(v) { try { if (v) localStorage.setItem(STORE, JSON.stringify(v)); else localStorage.removeItem(STORE); } catch (e) {} }
+  function stored() { try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { return null; } }
+  function loading(on) { $('loader').classList.toggle('d-none', !on); }
+
+  async function run(fn) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    const url = API + '?api=' + encodeURIComponent(fn) + '&d=' + encodeURIComponent(JSON.stringify(args)) + '&_=' + Date.now();
+    const res = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  // Panggil backend dengan sesi scanner; kalau sesi habis, coba login ulang otomatis memakai PIN tersimpan
+  async function api(fn) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    try {
+      let res = await run.apply(null, [fn, sess].concat(args));
+      if (res && res.sessionExpired) {
+        const ok = await relogin();
+        if (!ok) { showPin(res.message); return null; }
+        res = await run.apply(null, [fn, sess].concat(args));
+      }
+      if (!res || !res.success) { Swal.fire('Gagal', (res && res.message) || 'Terjadi kesalahan', 'error'); return null; }
+      return res;
+    } catch (e) {
+      Swal.fire('Koneksi bermasalah', 'Periksa internet lalu coba lagi. (' + (e && e.message ? e.message : e) + ')', 'error');
+      return null;
+    }
+  }
+
+  async function relogin() {
+    const s = stored();
+    if (!s || !s.pin) return false;
+    const res = await run('scanLogin', TOK, s.pin).catch(function() { return null; });
+    if (!res || !res.success) { store(null); return false; }
+    sess = res.sess; info = res.info; store({ sess: sess, pin: s.pin });
+    return true;
+  }
+
+  // ---------- PIN ----------
+  function showPin(msg) {
+    stopCam();
+    $('mainPage').classList.add('d-none');
+    $('pinPage').classList.remove('d-none');
+    $('pinMsg').innerText = msg || '';
+    $('pinInput').value = '';
+    $('pinInput').focus();
+  }
+
+  $('formPin').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const pin = $('pinInput').value.trim();
+    if (!pin) return;
+    loading(true);
+    const res = await run('scanLogin', TOK, pin).catch(function(err) { return { success: false, message: String(err) }; });
+    loading(false);
+    if (!res.success) { $('pinMsg').innerText = res.message; return; }
+    sess = res.sess; info = res.info;
+    store({ sess: sess, pin: pin });
+    enterMain();
+  });
+
+  async function enterMain() {
+    $('pinPage').classList.add('d-none');
+    $('mainPage').classList.remove('d-none');
+    renderHeader();
+    await refreshData();
+  }
+
+  $('btnLogoutScan').addEventListener('click', async function() {
+    const r = await Swal.fire({ title: 'Keluar dari scanner?', text: 'PIN perlu dimasukkan lagi untuk masuk.', showCancelButton: true, confirmButtonText: 'Keluar', cancelButtonText: 'Batal' });
+    if (!r.isConfirmed) return;
+    store(null); sess = null; showPin('');
+  });
+
+  // ---------- DATA ----------
+  function renderHeader() {
+    $('hdrAcara').innerText = info.pengundang || info.acara || 'Acara';
+    const hadir = guests.filter(function(g) { return g.waktuHadir; }).length;
+    $('stHadir').innerText = hadir;
+    $('stBelum').innerText = guests.length - hadir;
+    $('stWalkin').innerText = guests.filter(function(g) { return g.tipe === 'Walk-in'; }).length;
+  }
+
+  async function refreshData(silent) {
+    if (!sess) return;
+    if (!silent) loading(true);
+    const res = await api('scanData');
+    loading(false);
+    if (!res) return;
+    guests = res.guests; info = res.info || info;
+    renderHeader(); renderSearch();
+  }
+  $('btnRefresh').addEventListener('click', function() { refreshData(); });
+  setInterval(function() { if (sess && !document.hidden && !busy) refreshData(true); }, 30000);
+
+  function upsertGuest(g) {
+    const i = guests.findIndex(function(x) { return x.id === g.id; });
+    if (i >= 0) guests[i] = g; else guests.push(g);
+    renderHeader(); renderSearch();
+  }
+
+  // ---------- HASIL ----------
+  function beep(ok) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = ok ? 880 : 300; o.connect(g); g.connect(ctx.destination);
+      g.gain.value = 0.15; o.start(); o.stop(ctx.currentTime + (ok ? 0.15 : 0.35));
+    } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(ok ? 80 : [120, 60, 120]); } catch (e) {}
+  }
+
+  function showResult(res) {
+    clearTimeout(resultTimer);
+    const head = $('resHead'), body = $('resBody');
+    head.className = 'px-5 py-5 text-white text-center';
+    body.innerHTML = '';
+    const g = res.guest || {};
+    if (res.result === 'ok') {
+      head.classList.add('res-ok');
+      $('resIcon').className = 'fas fa-circle-check text-4xl';
+      $('resTitle').innerText = (g.tipe === 'Walk-in' ? 'Walk-in · ' : '') + 'Hadir · ' + jam(g.waktuHadir);
+      $('resNama').innerText = g.nama; $('resKet').innerText = g.ket || '';
+      body.innerHTML = '<button data-undo="' + escapeHTML(g.id) + '" class="w-full text-sm text-red-600 border border-red-200 rounded-xl py-2"><i class="fas fa-undo mr-1"></i> Batalkan (salah tamu)</button>';
+      beep(true);
+      resultTimer = setTimeout(closeResult, 3500);
+    } else if (res.result === 'already') {
+      head.classList.add('res-already');
+      $('resIcon').className = 'fas fa-triangle-exclamation text-4xl';
+      $('resTitle').innerText = 'Sudah hadir pukul ' + jam(g.waktuHadir);
+      $('resNama').innerText = g.nama; $('resKet').innerText = g.ket || '';
+      body.innerHTML = '<p class="text-sm text-slate-500 text-center">QR ini sudah pernah di-scan (' + escapeHTML(g.waktuHadir) + ').</p>';
+      beep(false);
+    } else if (res.result === 'multi') {
+      head.classList.add('res-already');
+      $('resIcon').className = 'fas fa-users text-4xl';
+      $('resTitle').innerText = 'Ada beberapa tamu dengan nama sama';
+      $('resNama').innerText = 'Pilih tamu yang datang'; $('resKet').innerText = '';
+      body.innerHTML = res.candidates.map(function(c) {
+        return '<button data-mark="' + escapeHTML(c.id) + '" class="w-full text-left border rounded-xl px-3 py-2' + (c.waktuHadir ? ' opacity-50' : '') + '"><b>' + escapeHTML(c.nama) + '</b>' +
+          (c.ket ? '<div class="text-xs text-slate-500">' + escapeHTML(c.ket) + '</div>' : '') +
+          (c.waktuHadir ? '<div class="text-xs text-amber-600">Sudah hadir ' + jam(c.waktuHadir) + '</div>' : '') + '</button>';
+      }).join('');
+      beep(false);
+    } else {
+      head.classList.add('res-notfound');
+      $('resIcon').className = 'fas fa-circle-xmark text-4xl';
+      $('resTitle').innerText = 'QR tidak dikenali';
+      $('resNama').innerText = 'Tamu tidak ditemukan'; $('resKet').innerText = '';
+      body.innerHTML = '<p class="text-xs text-slate-400 break-all text-center">' + escapeHTML(res.text || '') + '</p>' +
+        '<div class="grid grid-cols-2 gap-2"><button data-goto="cari" class="border rounded-xl py-2 text-sm"><i class="fas fa-search mr-1"></i> Cari Nama</button>' +
+        '<button data-goto="walkin" class="border rounded-xl py-2 text-sm"><i class="fas fa-user-plus mr-1"></i> Walk-in</button></div>';
+      beep(false);
+    }
+    $('resultOverlay').classList.remove('d-none');
+  }
+
+  function closeResult() {
+    clearTimeout(resultTimer);
+    $('resultOverlay').classList.add('d-none');
+    if (currentTab === 'scan' && !stream) $('usbInput').focus();
+  }
+  $('resClose').addEventListener('click', closeResult);
+
+  $('resBody').addEventListener('click', async function(e) {
+    const undo = e.target.closest('[data-undo]'), mark = e.target.closest('[data-mark]'), go = e.target.closest('[data-goto]');
+    if (undo) {
+      clearTimeout(resultTimer);
+      const id = undo.getAttribute('data-undo');
+      loading(true); const res = await api('scanUndo', id); loading(false);
+      if (res) { const g = guests.find(function(x) { return x.id === id; }); if (g) upsertGuest(Object.assign({}, g, { waktuHadir: '' })); closeResult(); Swal.fire({ toast: true, position: 'top', icon: 'info', title: 'Dibatalkan', showConfirmButton: false, timer: 1500 }); }
+    } else if (mark) {
+      await doMark(mark.getAttribute('data-mark'));
+    } else if (go) {
+      closeResult(); setTab(go.getAttribute('data-goto'));
+    }
+  });
+
+  async function doCheckin(text) {
+    if (busy) return;
+    busy = true; loading(true);
+    const res = await api('scanCheckin', text);
+    loading(false); busy = false;
+    if (!res) return;
+    if (res.guest) upsertGuest(res.guest);
+    showResult(res);
+  }
+
+  async function doMark(id) {
+    if (busy) return;
+    busy = true; loading(true);
+    const res = await api('scanMark', id);
+    loading(false); busy = false;
+    if (!res) return;
+    if (res.guest) upsertGuest(res.guest);
+    showResult(res);
+  }
+
+  // Abaikan QR yang sama dalam 4 detik (kamera membaca berkali-kali per detik)
+  function onDecoded(text) {
+    text = String(text || '').trim();
+    if (!text || busy || !$('resultOverlay').classList.contains('d-none')) return;
+    const now = Date.now();
+    if (text === lastText && now - lastAt < 4000) return;
+    lastText = text; lastAt = now;
+    doCheckin(text);
+  }
+
+  // ---------- KAMERA ----------
+  async function startCam() {
+    $('camMsg').innerText = '';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camFail('Browser ini tidak mendukung akses kamera langsung.'); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+    } catch (e) { camFail('Kamera tidak bisa dibuka (' + (e && e.name ? e.name : e) + ').'); return; }
+    const v = $('camVideo');
+    v.srcObject = stream;
+    await v.play().catch(function() {});
+    $('camIdle').classList.add('d-none'); $('camFrame').classList.remove('d-none');
+    $('btnCamStop').classList.remove('d-none');
+    scanning = true;
+    requestAnimationFrame(tick);
+  }
+
+  function camFail(msg) {
+    stream = null;
+    $('camMsg').innerHTML = escapeHTML(msg) + '<br>Gunakan tombol <b>Scan dari Foto</b> di bawah, atau alat scanner USB.';
+  }
+
+  function stopCam() {
+    scanning = false;
+    if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+    stream = null;
+    $('camVideo').srcObject = null;
+    $('camIdle').classList.remove('d-none'); $('camFrame').classList.add('d-none');
+    $('btnCamStop').classList.add('d-none');
+  }
+
+  let lastTick = 0;
+  function tick(ts) {
+    if (!scanning) return;
+    requestAnimationFrame(tick);
+    if (ts - lastTick < 180) return; // ~5x per detik cukup, hemat baterai
+    lastTick = ts;
+    const v = $('camVideo');
+    if (v.readyState < 2 || !v.videoWidth) return;
+    decodeFrom(v, v.videoWidth, v.videoHeight, 640);
+  }
+
+  function decodeFrom(src, w, h, maxDim) {
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    const cw = Math.round(w * scale), ch = Math.round(h * scale);
+    const c = $('camCanvas'); c.width = cw; c.height = ch;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(src, 0, 0, cw, ch);
+    const img = ctx.getImageData(0, 0, cw, ch);
+    const code = jsQR(img.data, cw, ch, { inversionAttempts: 'dontInvert' });
+    if (code && code.data) { onDecoded(code.data); return true; }
+    return false;
+  }
+
+  $('btnCamStart').addEventListener('click', startCam);
+  $('btnCamStop').addEventListener('click', stopCam);
+  $('btnPhoto').addEventListener('click', function() { $('filePhoto').click(); });
+  $('filePhoto').addEventListener('change', function(e) {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = function() {
+      URL.revokeObjectURL(url);
+      lastText = '';
+      // coba beberapa resolusi — QR kecil di foto besar kadang baru terbaca di resolusi lebih tinggi
+      const ok = [800, 1400, 2000].some(function(d) { return decodeFrom(img, img.naturalWidth, img.naturalHeight, d); });
+      if (!ok) Swal.fire('QR tidak terbaca', 'Foto QR lebih dekat, tegak lurus, dan tidak buram.', 'warning');
+    };
+    img.onerror = function() { URL.revokeObjectURL(url); Swal.fire('Gagal', 'File gambar tidak bisa dibaca.', 'error'); };
+    img.src = url;
+  });
+
+  // Scanner USB/Bluetooth bekerja seperti keyboard: mengetik isi QR lalu Enter
+  $('usbInput').addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const v = this.value; this.value = '';
+    lastText = '';
+    onDecoded(v);
+  });
+
+  // ---------- CARI NAMA ----------
+  function renderSearch() {
+    const q = $('searchInput').value.trim().toLowerCase();
+    let list = guests;
+    if (q) list = guests.filter(function(g) { return g.nama.toLowerCase().indexOf(q) >= 0 || g.ket.toLowerCase().indexOf(q) >= 0; });
+    list = list.slice().sort(function(a, b) { return a.nama.localeCompare(b.nama); }).slice(0, 60);
+    if (!list.length) { $('searchList').innerHTML = '<p class="p-4 text-center text-sm text-slate-400">' + (q ? 'Nama tidak ditemukan.' : 'Belum ada data tamu.') + '</p>'; return; }
+    $('searchList').innerHTML = list.map(function(g) {
+      const right = g.waktuHadir
+        ? '<span class="text-xs font-semibold text-green-600 whitespace-nowrap"><i class="fas fa-check"></i> ' + jam(g.waktuHadir) + '</span>'
+        : '<button data-mark="' + escapeHTML(g.id) + '" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-2 rounded-lg whitespace-nowrap">Hadir</button>';
+      return '<div class="flex items-center gap-3 px-3 py-2.5"><div class="min-w-0 flex-grow"><p class="font-medium truncate">' + escapeHTML(g.nama) +
+        (g.tipe === 'Walk-in' ? ' <span class="text-[10px] bg-indigo-100 text-indigo-600 rounded-full px-1.5">Walk-in</span>' : '') + '</p>' +
+        (g.ket ? '<p class="text-xs text-slate-400 truncate">' + escapeHTML(g.ket) + '</p>' : '') + '</div>' + right + '</div>';
+    }).join('');
+  }
+  $('searchInput').addEventListener('input', renderSearch);
+  $('searchList').addEventListener('click', function(e) { const b = e.target.closest('[data-mark]'); if (b) doMark(b.getAttribute('data-mark')); });
+
+  // ---------- WALK-IN ----------
+  $('formWalkin').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const nama = $('wkNama').value.trim();
+    if (!nama) return;
+    const dup = guests.filter(function(g) { return g.nama.trim().toLowerCase() === nama.toLowerCase(); });
+    if (dup.length) {
+      const r = await Swal.fire({ title: 'Nama sudah ada di daftar', text: '"' + dup[0].nama + '" sudah terdaftar' + (dup[0].waktuHadir ? ' dan sudah hadir ' + jam(dup[0].waktuHadir) : '') + '. Tetap tambah sebagai tamu baru?', icon: 'question', showCancelButton: true, confirmButtonText: 'Tetap tambah', cancelButtonText: 'Batal' });
+      if (!r.isConfirmed) return;
+    }
+    if (busy) return;
+    busy = true; loading(true);
+    const res = await api('scanWalkin', { nama: nama, phone: $('wkPhone').value, ket: $('wkKet').value });
+    loading(false); busy = false;
+    if (!res) return;
+    $('formWalkin').reset();
+    upsertGuest(res.guest);
+    showResult(res);
+  });
+
+  // ---------- TAB ----------
+  let currentTab = 'scan';
+  function setTab(t) {
+    currentTab = t;
+    document.querySelectorAll('.tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === t); });
+    ['scan', 'cari', 'walkin'].forEach(function(k) { $('tab-' + k).classList.toggle('d-none', k !== t); });
+    if (t !== 'scan') stopCam();
+    if (t === 'cari') { renderSearch(); $('searchInput').focus(); }
+    if (t === 'walkin') $('wkNama').focus();
+  }
+  document.querySelectorAll('.tab').forEach(function(b) { b.addEventListener('click', function() { setTab(b.getAttribute('data-tab')); }); });
+
+  // ---------- START ----------
+  (async function init() {
+    if (!TOK) {
+      $('formPin').classList.add('d-none');
+      $('pinMsg').innerText = 'Link scanner tidak lengkap. Buka link dari menu Presensi Tamu di aplikasi HaiMoment.';
+      return;
+    }
+    const s = stored();
+    if (s && s.sess) {
+      sess = s.sess;
+      loading(true);
+      const res = await run('scanData', sess).catch(function() { return null; });
+      loading(false);
+      if (res && res.success) { guests = res.guests; info = res.info; $('pinPage').classList.add('d-none'); $('mainPage').classList.remove('d-none'); renderHeader(); renderSearch(); return; }
+      if (res && !res.sessionExpired) { showPin(res.message); return; }
+      if (await relogin()) { enterMain(); return; }
+    }
+    showPin('');
+  })();
+})();
+</script>
+</body>
+</html>
