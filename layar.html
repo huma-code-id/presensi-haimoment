@@ -410,7 +410,7 @@
     $('wPass').innerText = s.wifiPass ? 'Pass: ' + s.wifiPass : '';
     $('wPass').classList.toggle('hide', !s.wifiPass);
 
-    const foto = fotoUrl(info.foto);
+    const foto = info.fotoData || fotoUrl(info.foto); // foto upload diutamakan daripada link
     const img = $('photo');
     if (foto) {
       if (img.getAttribute('src') !== foto) img.src = foto;
@@ -479,6 +479,19 @@
     $('hJam').innerText = String(d.getHours()).padStart(2, '0') + '.' + String(d.getMinutes()).padStart(2, '0') + ' WIB';
   }
 
+  // Foto yang di-upload klien diambil terpisah (ukurannya besar) dan hanya diulang saat versinya berubah
+  let fotoCache = { ver: 0, data: '' };
+  async function resolveFoto(info) {
+    if (!info || !info.fotoUp) return;
+    if (fotoCache.ver !== info.fotoUp) {
+      try {
+        const r = await call('layarFotoData', [KEY]);
+        if (r.success && r.data) fotoCache = { ver: r.ver, data: r.data };
+      } catch (e) { /* coba lagi di refresh info berikutnya */ }
+    }
+    info.fotoData = fotoCache.ver === info.fotoUp ? fotoCache.data : '';
+  }
+
   let inFlight = false;
   async function poll() {
     if (inFlight) return; // Apps Script kadang lambat >3 detik — cegah permintaan bertumpuk (sambutan dobel)
@@ -490,6 +503,7 @@
       $('err').style.display = 'none';
       if (withStats) {
         lastStats = Date.now();
+        await resolveFoto(res.info);
         applyInfo(res.info);
         if (res.stats) { stats = res.stats; renderStats(); }
         fitRecent();
