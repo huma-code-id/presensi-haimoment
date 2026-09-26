@@ -89,6 +89,10 @@
           <label class="block text-[11px] font-semibold text-slate-500 mb-1"><i class="fas fa-barcode mr-1"></i> Scanner USB / Bluetooth</label>
           <input id="usbInput" class="inp text-sm" autocomplete="off" placeholder="Klik di sini, lalu scan QR dengan alat scanner">
         </div>
+        <label class="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 cursor-pointer">
+          <input type="checkbox" id="askPax" class="mt-1 w-4 h-4">
+          <span class="text-sm"><b>Selalu tanya jumlah orang</b><br><span class="text-xs text-slate-500">Setelah scan, kartu menunggu sampai panitia memilih jumlah orang yang datang (1 · 2 · 3 · 4 · 5+).</span></span>
+        </label>
       </div>
 
       <!-- TAB CARI -->
@@ -260,6 +264,7 @@
 
   function showResult(res) {
     clearTimeout(resultTimer);
+    $('resClose').classList.remove('d-none');
     const head = $('resHead'), body = $('resBody');
     head.className = 'px-5 py-5 text-white text-center';
     body.innerHTML = '';
@@ -269,15 +274,18 @@
       $('resIcon').className = 'fas fa-circle-check text-4xl';
       $('resTitle').innerText = (g.tipe === 'Walk-in' ? 'Walk-in · ' : '') + 'Hadir · ' + jam(g.waktuHadir);
       $('resNama').innerText = g.nama; $('resKet').innerText = g.ket || '';
-      body.innerHTML = paxBox(g) + '<button data-undo="' + escapeHTML(g.id) + '" class="w-full text-sm text-red-600 border border-red-200 rounded-xl py-2"><i class="fas fa-undo mr-1"></i> Batalkan (salah tamu)</button>';
+      const ask = askPaxOn() && g.tipe !== 'Walk-in';
+      body.innerHTML = paxBox(g, ask) + '<button data-undo="' + escapeHTML(g.id) + '" class="w-full text-sm text-red-600 border border-red-200 rounded-xl py-2"><i class="fas fa-undo mr-1"></i> Batalkan (salah tamu)</button>';
       beep(true);
-      resultTimer = setTimeout(closeResult, 5000);
+      // Mode "selalu tanya": kartu menunggu pilihan jumlah orang; mode biasa: tutup otomatis
+      $('resClose').classList.toggle('d-none', ask);
+      if (!ask) resultTimer = setTimeout(closeResult, 5000);
     } else if (res.result === 'already') {
       head.classList.add('res-already');
       $('resIcon').className = 'fas fa-triangle-exclamation text-4xl';
       $('resTitle').innerText = 'Sudah hadir pukul ' + jam(g.waktuHadir);
       $('resNama').innerText = g.nama; $('resKet').innerText = g.ket || '';
-      body.innerHTML = '<p class="text-sm text-slate-500 text-center">QR ini sudah pernah di-scan (' + escapeHTML(g.waktuHadir) + ').</p>' + paxBox(g);
+      body.innerHTML = '<p class="text-sm text-slate-500 text-center">QR ini sudah pernah di-scan (' + escapeHTML(g.waktuHadir) + ').</p>' + paxBox(g, false);
       beep(false);
     } else if (res.result === 'multi') {
       head.classList.add('res-already');
@@ -303,27 +311,59 @@
     $('resultOverlay').classList.remove('d-none');
   }
 
-  // Info RSVP + koreksi jumlah orang yang datang (default = jumlah RSVP)
-  function paxBox(g) {
+  const ASK_KEY = 'pscan_askpax';
+  function askPaxOn() { try { return localStorage.getItem(ASK_KEY) === '1'; } catch (e) { return false; } }
+  $('askPax').checked = askPaxOn();
+  $('askPax').addEventListener('change', function() { try { localStorage.setItem(ASK_KEY, this.checked ? '1' : '0'); } catch (e) {} });
+
+  // Info RSVP + tombol cepat jumlah orang datang (default = jumlah RSVP / 1).
+  // ask=true: belum ada yang terpilih, angka RSVP hanya ditandai sebagai saran.
+  let paxGuestId = null;
+  function paxBox(g, ask) {
+    paxGuestId = g.id;
+    const cur = g.paxDatang || 1;
     const rsvp = g.rsvp ? '<p class="text-xs text-slate-500 text-center mb-2">RSVP: <b>' + escapeHTML(g.rsvp) + '</b>' + (g.rsvp === 'Hadir' && g.paxRsvp ? ' · ' + g.paxRsvp + ' orang' : '') + '</p>' : '';
-    return rsvp + '<div class="flex items-center justify-between border rounded-xl px-3 py-2"><span class="text-sm text-slate-600">Jumlah orang datang</span>' +
-      '<div class="flex items-center gap-3"><button data-pax="-1" data-id="' + escapeHTML(g.id) + '" class="w-9 h-9 rounded-full border text-lg">−</button>' +
-      '<b id="paxNow" class="text-lg w-6 text-center">' + (g.paxDatang || 1) + '</b>' +
-      '<button data-pax="1" data-id="' + escapeHTML(g.id) + '" class="w-9 h-9 rounded-full border text-lg">+</button></div></div>';
+    const btn = function(n, label) {
+      const hit = n === 5 ? cur >= 5 : cur === n;
+      const cls = hit ? (ask ? 'border-2 border-dashed border-green-500 text-green-700 bg-green-50' : 'bg-green-600 border-green-600 text-white') : 'bg-white text-slate-700';
+      return '<button data-paxn="' + n + '" class="h-12 rounded-xl border text-lg font-bold ' + cls + '">' + label + '</button>';
+    };
+    return rsvp + '<div class="border rounded-xl p-3' + (ask ? ' border-amber-300 bg-amber-50' : '') + '">' +
+      '<p class="text-sm mb-2 ' + (ask ? 'font-semibold text-amber-700' : 'text-slate-600') + '">' + (ask ? '<i class="fas fa-hand-pointer mr-1"></i> Pilih jumlah orang yang datang' : 'Jumlah orang datang') + '</p>' +
+      '<div class="grid grid-cols-5 gap-2">' + btn(1, '1') + btn(2, '2') + btn(3, '3') + btn(4, '4') + btn(5, cur >= 5 ? String(cur) : '5+') + '</div></div>';
   }
 
-  // Simpan jumlah orang setelah panitia berhenti menekan +/- (debounce)
-  let paxTimer = null;
-  function changePax(id, delta) {
-    clearTimeout(resultTimer);
+  // Simpan pilihan jumlah orang, lalu kembali ke mode scan
+  async function pickPax(n, direct) {
+    const id = paxGuestId;
     const g = guests.find(function(x) { return x.id === id; });
     if (!g) return;
-    g.paxDatang = Math.max(1, Math.min(10, (g.paxDatang || 1) + delta));
-    $('paxNow').innerText = g.paxDatang;
+    clearTimeout(resultTimer);
+    if (n >= 5 && !direct) {
+      const r = await Swal.fire({ title: 'Jumlah orang datang', input: 'number', inputValue: Math.max(5, g.paxDatang || 5),
+        inputAttributes: { min: 5, max: 10, step: 1 }, showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
+        inputValidator: function(v) { const x = parseInt(v, 10); return x >= 1 && x <= 10 ? null : 'Isi angka 1-10'; } });
+      if (!r.isConfirmed) return;
+      n = parseInt(r.value, 10);
+    }
+    g.paxDatang = n;
     renderHeader();
-    clearTimeout(paxTimer);
-    paxTimer = setTimeout(function() { api('scanSetPax', id, g.paxDatang); }, 700);
+    $('resBody').querySelectorAll('[data-paxn]').forEach(function(b) {
+      const v = parseInt(b.getAttribute('data-paxn'), 10), hit = v === 5 ? n >= 5 : v === n;
+      b.className = 'h-12 rounded-xl border text-lg font-bold ' + (hit ? 'bg-green-600 border-green-600 text-white' : 'bg-white text-slate-700');
+      if (v === 5) b.innerText = n >= 5 ? String(n) : '5+';
+    });
+    api('scanSetPax', id, n);
+    $('resClose').classList.remove('d-none');
+    resultTimer = setTimeout(closeResult, 700);
   }
+
+  // Keyboard (laptop + scanner USB): tekan 1-9 untuk memilih jumlah orang saat kartu terbuka
+  document.addEventListener('keydown', function(e) {
+    if ($('resultOverlay').classList.contains('d-none') || !$('resBody').querySelector('[data-paxn]') || Swal.isVisible()) return;
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 9) { e.preventDefault(); pickPax(n, true); }
+  });
 
   function closeResult() {
     clearTimeout(resultTimer);
@@ -333,8 +373,8 @@
   $('resClose').addEventListener('click', closeResult);
 
   $('resBody').addEventListener('click', async function(e) {
-    const undo = e.target.closest('[data-undo]'), mark = e.target.closest('[data-mark]'), go = e.target.closest('[data-goto]'), pax = e.target.closest('[data-pax]');
-    if (pax) { changePax(pax.getAttribute('data-id'), parseInt(pax.getAttribute('data-pax'), 10)); return; }
+    const undo = e.target.closest('[data-undo]'), mark = e.target.closest('[data-mark]'), go = e.target.closest('[data-goto]'), pax = e.target.closest('[data-paxn]');
+    if (pax) { pickPax(parseInt(pax.getAttribute('data-paxn'), 10)); return; }
     if (undo) {
       clearTimeout(resultTimer);
       const id = undo.getAttribute('data-undo');
