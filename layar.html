@@ -75,8 +75,11 @@
 
   /* ---- Panggung utama ---- */
   main { flex: 1; min-height: 0; padding: 3.2vh 3.6vw 3vh; display: grid; grid-template-columns: 7fr 5fr; gap: 3.2vw; position: relative; z-index: 1; }
-  body.no-list main { grid-template-columns: 1fr; }
-  body.no-list aside { display: none; }
+  body.no-aside main { grid-template-columns: 1fr; }
+  body.no-aside aside { display: none; }
+  body.no-list .feed-h, body.no-list #recent, body.no-list .qr { display: none; }
+  body.no-list .panel { flex: none; }
+  aside.slim { justify-content: center; }
   .hero { min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 
   .photo { position: relative; flex: 0 1 auto; min-height: 0; display: flex; justify-content: center; align-items: center; }
@@ -220,6 +223,12 @@
   [data-tema="mono"] .wifi .l .ic { color: var(--ink); }
   [data-tema="mono"] .wifi .k { color: var(--ink); letter-spacing: .3em; font-weight: 500; }
   [data-tema="mono"] .wifi .pw { color: var(--ink); background: var(--card-low); border: 0; font-family: 'Cinzel', serif; }
+  .ig .l .ic { color: var(--accent); }
+  .ig .ss { font-style: italic; }
+  .ig .hs { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6vh .6vw; min-width: 0; }
+  .ig .pw { font-family: 'Playfair Display', serif; font-weight: 400; letter-spacing: .02em; }
+  [data-tema="mono"] .ig .l .ic { color: var(--ink); }
+  [data-tema="mono"] .ig .pw { font-family: 'Playfair Display', serif; }
 
   /* ---- Sorotan tamu baru (muncul setiap ada scan) ---- */
   #spot { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .6s ease;
@@ -324,6 +333,11 @@
           <div class="h-stack"><span class="k cz">Venue Guest Wi-Fi</span><span class="ss" id="wSsid"></span></div></div>
         <div class="pw" id="wPass"></div>
       </div>
+      <div class="wifi ig hide" id="ig">
+        <div class="l"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".9" fill="currentColor"/></svg>
+          <div class="h-stack"><span class="k cz">Tag Story Kami</span><span class="ss">Bagikan momen di Instagram</span></div></div>
+        <div class="hs" id="igList"></div>
+      </div>
     </aside>
   </main>
 </div>
@@ -377,8 +391,15 @@
     if (!info) return;
     const s = info.set || {};
     document.documentElement.setAttribute('data-tema', s.tema === 'mono' ? 'mono' : 'gold');
+    const ig = [s.ig1, s.ig2].map(function(h) { return String(h || '').trim().replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i, '').replace(/[/?#].*$/, '').replace(/^@+/, ''); }).filter(Boolean);
+    const panelOn = s.daftar !== false || s.jumlah !== false;
     document.body.classList.toggle('no-list', s.daftar === false);
     document.body.classList.toggle('no-count', s.jumlah === false);
+    document.querySelector('.panel').classList.toggle('hide', !panelOn);
+    document.querySelector('aside').classList.toggle('slim', s.daftar === false);
+    document.body.classList.toggle('no-aside', !panelOn && !s.wifi && !ig.length);
+    $('ig').classList.toggle('hide', !ig.length);
+    $('igList').innerHTML = ig.map(function(h) { return '<span class="pw">@' + esc(h) + '</span>'; }).join('');
     const judul = info.judul || 'Selamat Datang';
     const pair = splitNames(judul);
     $('names').innerHTML = pair ? esc(pair[0]) + '<span class="amp">&amp;</span>' + esc(pair[1]) : esc(judul);
