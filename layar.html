@@ -1,75 +1,342 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-tema="gold">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Layar Sambutan - HaiMoment</title>
+<title>Layar Pembuka - HaiMoment</title>
 <link rel="icon" href="logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
-  :root { --gold: #e9c98b; --ink: #fdfaf3; --muted: rgba(253, 250, 243, .72); }
+  /* ===== Tema: Gold Elegan (default) ===== */
+  :root, [data-tema="gold"] {
+    --bg: #131315; --bg-2: #0e0e10; --bar: rgba(19, 19, 21, .82);
+    --card: #201f21; --card-2: #2a2a2c; --card-low: #0e0e10;
+    --ink: #e5e1e4; --ink-2: #d0c5af; --muted: #99907c; --line: rgba(77, 70, 53, .55);
+    --accent: #f2ca50; --accent-2: #eacb8d; --accent-3: #d5c59e; --amp: #f2ca50;
+    --live: #34d399; --glow: rgba(242, 202, 80, .10); --glow-2: rgba(234, 203, 141, .05);
+    --photo-filter: none; --name-shadow: 0 8px 30px rgba(242, 202, 80, .15);
+    --badge-bg: transparent; --badge-ink: var(--muted); --badge-bd: transparent;
+  }
+  /* ===== Tema: Monokrom Haute Couture ===== */
+  [data-tema="mono"] {
+    --bg: #0f0f11; --bg-2: #0b0b0c; --bar: rgba(15, 15, 17, .85);
+    --card: #1a1a1c; --card-2: #232325; --card-low: #141416;
+    --ink: #f2f0ee; --ink-2: #cfcac4; --muted: #8f8a85; --line: rgba(255, 255, 255, .09);
+    --accent: #f2f0ee; --accent-2: #d9d4ce; --accent-3: #b9b3ad; --amp: #a9a39c;
+    --live: #f2f0ee; --glow: rgba(255, 255, 255, .035); --glow-2: rgba(255, 255, 255, .02);
+    --photo-filter: grayscale(1) contrast(1.05); --name-shadow: 0 8px 30px rgba(0, 0, 0, .5);
+    --badge-bg: #0b0b0c; --badge-ink: #e9e6e2; --badge-bd: rgba(255, 255, 255, .12);
+  }
+
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1410; color: var(--ink); font-family: 'Inter', sans-serif; }
-  #bg { position: fixed; inset: 0; background: radial-gradient(ellipse at top, #4a3526 0%, #1a1410 70%); background-size: cover; background-position: center; }
-  #bg.photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 8, 6, .55) 0%, rgba(10, 8, 6, .78) 100%); }
-  .stage { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: 3vh 4vw; }
-  header { text-align: center; }
-  .judul { font-family: 'Great Vibes', cursive; font-size: clamp(40px, 7vw, 110px); color: var(--gold); line-height: 1.1; text-shadow: 0 2px 20px rgba(0, 0, 0, .4); }
-  .sub { font-size: clamp(13px, 1.5vw, 22px); letter-spacing: .25em; text-transform: uppercase; color: var(--muted); margin-top: .6vh; }
-  main { display: grid; grid-template-columns: 1fr minmax(240px, 26vw); gap: 3vw; align-items: center; min-height: 0; }
-  .welcome { text-align: center; }
-  .card { opacity: 0; transform: translateY(24px) scale(.97); transition: opacity .7s ease, transform .7s ease; }
-  .card.show { opacity: 1; transform: none; }
-  .sd { font-family: 'Great Vibes', cursive; font-size: clamp(34px, 5vw, 80px); color: var(--gold); }
-  .nama { font-family: 'Playfair Display', serif; font-weight: 700; font-size: clamp(36px, 6.5vw, 120px); line-height: 1.12; margin: 1vh 0; word-break: break-word; }
-  .ket { font-size: clamp(16px, 2vw, 30px); color: var(--muted); }
-  .pax { display: inline-block; margin-top: 2vh; padding: .5vh 1.4vw; border: 1px solid rgba(233, 201, 139, .5); border-radius: 999px; color: var(--gold); font-size: clamp(14px, 1.6vw, 24px); }
-  .idle .nama { font-size: clamp(30px, 4.5vw, 80px); }
-  aside { background: rgba(0, 0, 0, .28); border: 1px solid rgba(233, 201, 139, .18); border-radius: 18px; padding: 2vh 1.4vw; max-height: 62vh; overflow: hidden; backdrop-filter: blur(4px); }
-  aside h3 { margin: 0 0 1.4vh; font-weight: 600; font-size: clamp(12px, 1.1vw, 17px); letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
-  #recent { list-style: none; margin: 0; padding: 0; }
-  #recent li { padding: 1.1vh 0; border-top: 1px solid rgba(253, 250, 243, .1); animation: slide .6s ease; }
-  #recent li:first-child { border-top: 0; }
-  #recent .n { font-weight: 600; font-size: clamp(14px, 1.35vw, 22px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #recent .t { font-size: clamp(11px, .95vw, 15px); color: var(--muted); }
-  @keyframes slide { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-  footer { display: flex; justify-content: space-between; align-items: center; font-size: clamp(12px, 1.2vw, 18px); color: var(--muted); }
-  .stat b { color: var(--gold); font-size: 1.35em; }
-  .brand { display: flex; align-items: center; gap: .6vw; }
-  .brand img { height: clamp(22px, 2.6vw, 40px); }
-  #fs { position: fixed; top: 12px; right: 12px; background: rgba(0, 0, 0, .35); color: var(--ink); border: 1px solid rgba(255, 255, 255, .2); border-radius: 8px; padding: 6px 12px; font: 500 12px 'Inter', sans-serif; cursor: pointer; opacity: .5; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: 'EB Garamond', Georgia, serif; -webkit-font-smoothing: antialiased; transition: background .5s; }
+  .cz { font-family: 'Cinzel', serif; text-transform: uppercase; }
+  .pf { font-family: 'Playfair Display', serif; }
+  svg.ic { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  .glow { position: fixed; pointer-events: none; border-radius: 50%; filter: blur(80px); }
+  .glow.a { top: -22vh; left: 12vw; width: 55vw; height: 45vh; background: radial-gradient(closest-side, var(--glow), transparent); }
+  .glow.b { bottom: -8vh; right: 4vw; width: 32vw; height: 34vh; background: radial-gradient(closest-side, var(--glow-2), transparent); }
+
+  .app { position: relative; height: 100%; display: flex; flex-direction: column; }
+
+  /* ---- Header ---- */
+  header { flex: none; height: 7.4vh; min-height: 56px; padding: 0 3.6vw; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2vw;
+    background: var(--bar); box-shadow: 0 1px 8px rgba(0, 0, 0, .4); position: relative; z-index: 2; }
+  .h-left, .h-right { display: flex; align-items: center; gap: .8vw; min-width: 0; }
+  .h-right { justify-content: flex-end; text-align: right; }
+  .h-left .ic, .h-right .ic { font-size: clamp(16px, 1.3vw, 26px); color: var(--accent); }
+  .h-stack { display: flex; flex-direction: column; min-width: 0; }
+  .h-top { font-size: clamp(9px, .72vw, 14px); letter-spacing: .25em; color: var(--accent); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .h-sub { font-size: clamp(11px, .95vw, 18px); letter-spacing: .08em; color: var(--ink-2); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  [data-tema="mono"] .h-top { color: var(--ink); font-size: clamp(10px, .85vw, 16px); font-weight: 500; }
+  [data-tema="mono"] .h-sub { font-family: 'Cinzel', serif; font-size: clamp(8px, .62vw, 12px); letter-spacing: .3em; color: var(--muted); }
+  [data-tema="mono"] .h-left > .ic { display: none; }
+  .h-center { font-size: clamp(12px, 1.12vw, 22px); letter-spacing: .35em; color: var(--accent); padding-bottom: .45vh; border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); white-space: nowrap; }
+  [data-tema="mono"] .h-center { color: var(--ink); font-weight: 400; border-bottom: 0; position: relative; }
+  [data-tema="mono"] .h-center::after { content: ''; position: absolute; left: 50%; bottom: -.4vh; width: 2.2vw; height: 1px; background: var(--muted); transform: translateX(-50%); }
+  #fs { width: clamp(30px, 2.4vw, 46px); height: clamp(30px, 2.4vw, 46px); border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--accent); cursor: pointer; display: grid; place-items: center; font-size: clamp(14px, 1.1vw, 20px); opacity: .6; }
   #fs:hover { opacity: 1; }
-  #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 18px; background: #1a1410; }
-  @media (max-width: 760px) { main { grid-template-columns: 1fr; } aside { display: none; } }
+  [data-tema="mono"] #fs { background: #f2ca50; color: #1a1400; border: 0; opacity: .9; }
+
+  /* ---- Pita info (gold) ---- */
+  .strip { flex: none; margin: 0 3.6vw; padding: 2.4vh 0 1.4vh; display: flex; align-items: center; justify-content: space-between; gap: 2vw; border-bottom: 1px solid var(--line); position: relative; z-index: 1; }
+  .strip .l, .strip .r { display: flex; align-items: center; gap: 1vw; min-width: 0; }
+  .strip .k { font-size: clamp(9px, .72vw, 14px); letter-spacing: .3em; color: var(--accent-2); font-weight: 600; white-space: nowrap; }
+  .strip .v { font-size: clamp(11px, 1vw, 19px); letter-spacing: .14em; color: var(--accent-3); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .strip .mono { width: clamp(28px, 2.4vw, 44px); height: clamp(28px, 2.4vw, 44px); border-radius: 50%; background: var(--card); display: grid; place-items: center; color: var(--accent); font-size: clamp(9px, .72vw, 13px); letter-spacing: .08em; box-shadow: 0 6px 14px rgba(0, 0, 0, .4); }
+  .dot-ping { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); position: relative; flex: none; }
+  .dot-ping::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ping 1.6s cubic-bezier(0, 0, .2, 1) infinite; }
+  @keyframes ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+  [data-tema="mono"] .strip { display: none; }
+
+  /* ---- Panggung utama ---- */
+  main { flex: 1; min-height: 0; padding: 3.2vh 3.6vw 3vh; display: grid; grid-template-columns: 7fr 5fr; gap: 3.2vw; position: relative; z-index: 1; }
+  body.no-list main { grid-template-columns: 1fr; }
+  body.no-list aside { display: none; }
+  .hero { min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+  .photo { position: relative; flex: 0 1 auto; min-height: 0; display: flex; justify-content: center; align-items: center; }
+  .photo img { display: block; height: 38vh; max-width: 100%; object-fit: contain; filter: var(--photo-filter) drop-shadow(0 15px 35px rgba(212, 175, 55, .22)); }
+  .photo .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: linear-gradient(to top, var(--bg), rgba(0, 0, 0, 0)); pointer-events: none; }
+  .photo .pill { position: absolute; bottom: -1.4vh; left: 50%; transform: translateX(-50%); padding: .7vh 1.6vw; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 90%, transparent); backdrop-filter: blur(8px); font-size: clamp(9px, .72vw, 14px); letter-spacing: .25em; color: var(--accent); white-space: nowrap; }
+  .monogram { width: 22vh; height: 22vh; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); display: flex; align-items: center; justify-content: center; white-space: nowrap;
+    font-family: 'Playfair Display', serif; font-size: 8vh; color: var(--accent); position: relative; box-shadow: 0 20px 48px -8px rgba(0, 0, 0, .45); }
+  .monogram::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
+  .monogram i { font-style: italic; font-size: .7em; margin: 0 .05em; color: var(--amp); }
+
+  .kicker { display: flex; align-items: center; gap: 1.2vw; margin-top: 3.6vh; }
+  .kicker span { font-size: clamp(10px, .92vw, 18px); letter-spacing: .35em; color: var(--accent-3); }
+  .kicker .ln { width: 3vw; height: 1px; background: linear-gradient(to right, transparent, var(--line)); }
+  .kicker .ln.r { background: linear-gradient(to left, transparent, var(--line)); }
+  .names { font-family: 'Playfair Display', serif; font-weight: 400; font-size: clamp(40px, 5.6vw, 150px); line-height: 1.02; letter-spacing: -.01em; margin: 1.2vh 0 .6vh; color: var(--ink); text-shadow: var(--name-shadow); overflow-wrap: anywhere; }
+  .names .amp { font-style: italic; color: var(--amp); margin: 0 .12em; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6vh 1.6vw; }
+  .meta span { font-size: clamp(10px, .95vw, 19px); letter-spacing: .25em; color: var(--accent-2); font-weight: 600; }
+  .meta .sep { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+  .quote { margin-top: 2.6vh; max-width: 42vw; }
+  .quote p { margin: 0; font-style: italic; font-size: clamp(16px, 1.55vw, 32px); color: color-mix(in srgb, var(--accent-3) 90%, transparent); letter-spacing: .02em; }
+  .quote small { display: block; margin-top: .8vh; font-size: clamp(10px, .85vw, 16px); letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
+  .tags { margin-top: 2.6vh; width: min(100%, 44vw); padding: 1vh 1.6vw; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 12px;
+    background: color-mix(in srgb, var(--card) 60%, transparent); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1vh 1.5vw; }
+  .tags .cap { display: flex; align-items: center; gap: .6vw; font-size: clamp(9px, .72vw, 14px); letter-spacing: .25em; color: color-mix(in srgb, var(--accent-3) 80%, transparent); }
+  .tags .cap .ic { color: var(--accent); font-size: 1.4em; }
+  .tags .list { display: flex; flex-wrap: wrap; gap: .6vh 1.4vw; }
+  .tags .t { font-style: italic; color: var(--accent); font-size: clamp(14px, 1.15vw, 24px); letter-spacing: .03em; }
+  .tags .t b { font-family: 'Cinzel', serif; font-style: normal; font-size: .75em; color: var(--accent-2); margin-right: .1em; }
+
+  /* ---- Mono: foto besar bergaya editorial ---- */
+  [data-tema="mono"] .hero { align-items: stretch; text-align: left; justify-content: flex-start; }
+  [data-tema="mono"] .photo { flex: 1 1 auto; border-radius: 10px; overflow: hidden; background: #0b0b0c; min-height: 22vh; }
+  [data-tema="mono"] .photo img { width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: center 22%; filter: var(--photo-filter); }
+  [data-tema="mono"] .photo .fade { height: 55%; background: linear-gradient(to top, rgba(10, 10, 11, .92), rgba(10, 10, 11, 0)); }
+  [data-tema="mono"] .photo .pill { display: none; }
+  [data-tema="mono"] .photo .corner { display: block; }
+  .corner { display: none; position: absolute; width: 14px; height: 14px; border-color: rgba(255, 255, 255, .45); border-style: solid; border-width: 0; }
+  .corner.tl { top: 2.2vh; left: 1.6vw; border-top-width: 1px; border-left-width: 1px; }
+  .corner.tr { top: 2.2vh; right: 1.6vw; border-top-width: 1px; border-right-width: 1px; }
+  .over { display: none; }
+  [data-tema="mono"] .over { display: block; position: absolute; left: 2.2vw; bottom: 3vh; right: 2.2vw; }
+  .over .o1 { display: flex; align-items: center; gap: .6vw; font-size: clamp(9px, .78vw, 15px); letter-spacing: .3em; color: #e9e6e2; }
+  .over .o1::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #e9e6e2; }
+  .over .o2 { margin-top: 1.2vh; font-size: clamp(10px, .95vw, 18px); letter-spacing: .3em; color: #cfcac4; }
+  [data-tema="mono"] .kicker { display: none; }
+  [data-tema="mono"] .names { font-size: clamp(40px, 5.2vw, 140px); margin-top: 2.6vh; }
+  [data-tema="mono"] .names .amp { font-size: .55em; }
+  [data-tema="mono"] .meta { justify-content: flex-start; }
+  [data-tema="mono"] .meta span { color: var(--ink-2); font-weight: 500; }
+  [data-tema="mono"] .quote { max-width: none; background: var(--card); border-radius: 4px; padding: .8vh .6vw; margin-top: 1.4vh; display: grid; grid-template-columns: 1fr auto; align-items: end; }
+  [data-tema="mono"] .quote p { color: var(--ink); grid-column: 1 / -1; }
+  [data-tema="mono"] .quote small { color: var(--ink-2); }
+  [data-tema="mono"] .quote .qtag { display: block; }
+  .qtag { display: none; font-size: clamp(10px, .85vw, 16px); letter-spacing: .15em; color: var(--muted); }
+  [data-tema="mono"] .tags { width: auto; border: 0; background: none; padding: 0; justify-content: flex-start; margin-top: 1.8vh; }
+  [data-tema="mono"] .tags .cap, [data-tema="mono"] .tags .t { background: var(--card-2); border-radius: 10px; padding: 1.1vh 1.2vw; }
+  [data-tema="mono"] .tags .cap { color: var(--ink-2); }
+  [data-tema="mono"] .tags .cap .ic, [data-tema="mono"] .tags .t, [data-tema="mono"] .tags .t b { color: var(--ink); font-style: normal; }
+  [data-tema="mono"] .tags .t b { font-family: inherit; font-size: 1em; }
+  [data-tema="mono"] #pTitleHadir { display: none; }
+
+  /* ---- Panel presensi ---- */
+  aside { min-height: 0; display: flex; flex-direction: column; gap: 2vh; }
+  .panel { flex: 1 1 auto; min-height: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 2.6vh 1.8vw; display: flex; flex-direction: column; box-shadow: 0 20px 48px -8px rgba(0, 0, 0, .45); }
+  .p-head { display: flex; align-items: center; justify-content: space-between; gap: 1vw; padding-bottom: 1.6vh; border-bottom: 1px solid var(--line); }
+  .p-title { display: flex; align-items: center; gap: .6vw; font-size: clamp(9px, .78vw, 15px); letter-spacing: .25em; color: var(--accent-3); font-weight: 600; }
+  .p-title .ic { color: var(--accent); font-size: 1.6em; }
+  .p-title small { display: none; }
+  .live { display: flex; align-items: center; gap: .5vw; font-size: clamp(8px, .72vw, 14px); letter-spacing: .12em; color: var(--live); font-weight: 600; white-space: nowrap; }
+  .live .dot-ping { background: var(--live); }
+  [data-tema="mono"] .p-head { border-bottom: 0; padding-bottom: .4vh; }
+  [data-tema="mono"] .p-title { flex-direction: column; align-items: flex-start; gap: .3vh; color: var(--ink); font-weight: 500; font-size: clamp(10px, .9vw, 17px); }
+  [data-tema="mono"] .p-title .ic { display: none; }
+  [data-tema="mono"] .p-title small { display: block; font-family: 'EB Garamond', serif; text-transform: none; letter-spacing: .02em; font-size: clamp(12px, .95vw, 18px); color: var(--ink-2); }
+  [data-tema="mono"] .live { background: var(--card-2); border-radius: 999px; padding: .6vh .9vw; color: var(--ink); letter-spacing: .25em; }
+
+  .qr { display: flex; align-items: center; gap: 1.3vw; margin: 2vh 0 1.4vh; padding: 1.6vh 1vw; background: color-mix(in srgb, var(--card-low) 80%, transparent); border: 1px solid var(--line); border-radius: 8px; }
+  .qr .box { flex: none; padding: .5vw; border-radius: 6px; background: var(--card-low); color: var(--accent); }
+  .qr .box svg { display: block; width: clamp(48px, 4.2vw, 84px); height: clamp(48px, 4.2vw, 84px); }
+  .qr .box .hole { fill: var(--card-low); }
+  .qr .k { font-size: clamp(9px, .72vw, 14px); letter-spacing: .2em; color: var(--accent); font-weight: 600; }
+  .qr p { margin: .5vh 0 0; font-size: clamp(12px, 1vw, 19px); color: var(--accent-3); line-height: 1.45; }
+  [data-tema="mono"] .qr { border: 0; background: var(--card-low); box-shadow: 0 10px 24px rgba(0, 0, 0, .35); }
+  [data-tema="mono"] .qr .box { background: #f3f1ee; color: #111; }
+  [data-tema="mono"] .qr .box .hole { fill: #f3f1ee; }
+  [data-tema="mono"] .qr .k { color: var(--ink); font-weight: 500; letter-spacing: .25em; }
+  [data-tema="mono"] .qr p { color: var(--ink-2); }
+
+  .feed-h { display: flex; justify-content: space-between; gap: 1vw; margin: .6vh 0 1vh; font-size: clamp(8px, .7vw, 13px); letter-spacing: .2em; color: var(--ink-2); }
+  .feed-h .auto { display: none; color: var(--muted); }
+  [data-tema="mono"] .feed-h .auto { display: inline; }
+  #recent { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: .8vh; }
+  #recent li { flex: none; display: flex; align-items: center; gap: 1vw; padding: 1.1vh .8vw; background: color-mix(in srgb, var(--card-2) 50%, transparent); border-radius: 4px; border-left: 2px solid transparent; animation: slide .6s ease; }
+  #recent li:first-child { background: color-mix(in srgb, var(--card-2) 80%, transparent); border-left-color: var(--accent); }
+  #recent .av { display: none; }
+  #recent .nm { flex: 1; min-width: 0; }
+  #recent .n { font-size: clamp(14px, 1.2vw, 24px); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #recent li:first-child .n { font-weight: 600; }
+  #recent .s { font-size: clamp(11px, .92vw, 17px); color: var(--accent-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #recent li:first-child .s { color: var(--accent); }
+  #recent .tm { flex: none; font-size: clamp(11px, .92vw, 17px); color: var(--muted); }
+  #recent li:first-child .tm { color: var(--live); font-weight: 600; }
+  #recent .empty { justify-content: center; color: var(--muted); font-style: italic; background: none; border: 0; }
+  [data-tema="mono"] #recent { gap: 1vh; }
+  [data-tema="mono"] #recent li, [data-tema="mono"] #recent li:first-child { background: var(--card-2); border-left: 0; border-radius: 6px; padding: 1.4vh 1vw; }
+  [data-tema="mono"] #recent .av { display: grid; place-items: center; flex: none; width: clamp(26px, 2.2vw, 42px); height: clamp(26px, 2.2vw, 42px); border-radius: 50%; background: var(--card-low); color: var(--ink); font-size: clamp(12px, 1vw, 19px); }
+  [data-tema="mono"] #recent .n { font-weight: 400 !important; font-size: clamp(15px, 1.35vw, 27px); }
+  [data-tema="mono"] #recent .s, [data-tema="mono"] #recent li:first-child .s { color: var(--ink-2); }
+  [data-tema="mono"] #recent .tm, [data-tema="mono"] #recent li:first-child .tm { font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: .08em; font-size: clamp(8px, .7vw, 13px); font-weight: 600;
+    color: var(--badge-ink); background: var(--badge-bg); border: 1px solid var(--badge-bd); border-radius: 999px; padding: .6vh .8vw; }
+  @keyframes slide { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+  .total { flex: none; margin-top: 1.6vh; padding-top: 1.4vh; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 1vw; }
+  .total .row { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 1vw; }
+  .total .k { display: flex; align-items: center; gap: .5vw; font-size: clamp(9px, .75vw, 14px); letter-spacing: .2em; color: var(--accent-3); }
+  .total .k .ic { color: var(--accent); font-size: 1.5em; }
+  .total .v { font-family: 'Cinzel', serif; font-size: clamp(9px, .78vw, 15px); letter-spacing: .06em; color: var(--accent); font-weight: 600; text-align: right; }
+  .total .v span { color: var(--muted); font-weight: 400; }
+  .bar, .total .ft { display: none; }
+  [data-tema="mono"] .total { display: block; border-top: 0; background: var(--card-low); border-radius: 8px; padding: 2vh 1.2vw; }
+  [data-tema="mono"] .total .row { display: flex; align-items: baseline; justify-content: space-between; }
+  [data-tema="mono"] .total .k { color: var(--ink); letter-spacing: .3em; font-size: clamp(10px, .85vw, 16px); }
+  [data-tema="mono"] .total .k .ic { display: none; }
+  [data-tema="mono"] .total .v { font-family: 'EB Garamond', serif; font-weight: 400; color: var(--ink-2); font-size: clamp(12px, 1vw, 19px); }
+  [data-tema="mono"] .total .v b { font-family: 'Playfair Display', serif; font-size: 1.9em; color: var(--ink); font-weight: 400; }
+  [data-tema="mono"] .bar { display: block; height: 5px; border-radius: 3px; background: #2e2e31; margin: 1.4vh 0 1vh; overflow: hidden; }
+  [data-tema="mono"] .bar i { display: block; height: 100%; width: 0; background: #f2f0ee; border-radius: 3px; transition: width .8s ease; }
+  [data-tema="mono"] .total .ft { display: flex; justify-content: space-between; font-size: clamp(11px, .9vw, 17px); color: var(--ink-2); letter-spacing: .03em; }
+  body.no-count .total { display: none !important; }
+
+  .wifi { flex: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.6vh 1.2vw; display: flex; align-items: center; justify-content: space-between; gap: 1vw; }
+  .wifi .l { display: flex; align-items: center; gap: .8vw; min-width: 0; }
+  .wifi .l .ic { color: var(--accent-2); font-size: clamp(16px, 1.3vw, 26px); }
+  .wifi .k { font-size: clamp(8px, .7vw, 13px); letter-spacing: .15em; color: var(--accent-3); font-weight: 600; }
+  .wifi .ss { font-size: clamp(12px, .95vw, 18px); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wifi .pw { flex: none; font-size: clamp(12px, .95vw, 18px); color: var(--accent); background: var(--card-low); border: 1px solid var(--line); border-radius: 4px; padding: .7vh .8vw; font-weight: 600; letter-spacing: .04em; }
+  [data-tema="mono"] .wifi { border: 0; background: var(--card-2); }
+  [data-tema="mono"] .wifi .l .ic { color: var(--ink); }
+  [data-tema="mono"] .wifi .k { color: var(--ink); letter-spacing: .3em; font-weight: 500; }
+  [data-tema="mono"] .wifi .pw { color: var(--ink); background: var(--card-low); border: 0; font-family: 'Cinzel', serif; }
+
+  /* ---- Sorotan tamu baru (muncul setiap ada scan) ---- */
+  #spot { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .6s ease;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .82) 100%); backdrop-filter: blur(6px); }
+  #spot.show { opacity: 1; }
+  .sp-card { position: relative; min-width: 46vw; max-width: 80vw; padding: 7vh 5vw 6vh; text-align: center; background: color-mix(in srgb, var(--card) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 10px; box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 1px 1px rgba(255, 255, 255, .12);
+    transform: translateY(24px) scale(.97); transition: transform .7s cubic-bezier(.2, .8, .2, 1); }
+  #spot.show .sp-card { transform: none; }
+  .sp-card::before { content: ''; position: absolute; inset: 10px; border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 6px; pointer-events: none; }
+  .sp-k { font-size: clamp(11px, 1.05vw, 20px); letter-spacing: .4em; color: var(--accent); }
+  .sp-rule { width: 9vw; height: 1px; margin: 2.2vh auto; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+  .sp-n { font-family: 'Playfair Display', serif; font-size: clamp(34px, 4.8vw, 120px); line-height: 1.1; color: var(--ink); overflow-wrap: anywhere; }
+  .sp-s { margin-top: 1.6vh; font-size: clamp(16px, 1.6vw, 32px); font-style: italic; color: var(--accent-3); }
+  .sp-p { display: inline-block; margin-top: 2.4vh; padding: .8vh 1.6vw; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; font-size: clamp(10px, .9vw, 17px); letter-spacing: .25em; color: var(--accent); }
+  .sp-t { margin-top: 2.6vh; font-size: clamp(11px, .95vw, 18px); letter-spacing: .3em; color: var(--muted); }
+
+  .brand { position: fixed; right: 1.2vw; bottom: .8vh; display: flex; align-items: center; gap: .4vw; font-size: clamp(9px, .65vw, 12px); letter-spacing: .1em; color: var(--muted); opacity: .45; z-index: 3; font-family: 'Cinzel', serif; }
+  .brand img { height: clamp(12px, 1vw, 20px); }
+  #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 20px; background: var(--bg); color: var(--ink); z-index: 30; }
+  .hide { display: none !important; }
+
+  /* Layar sempit / potret: tumpuk */
+  @media (max-aspect-ratio: 1/1), (max-width: 760px) {
+    html, body { overflow: auto; }
+    .app { height: auto; min-height: 100%; }
+    header { grid-template-columns: 1fr auto; height: auto; padding: 12px 16px; }
+    .h-center { display: none; }
+    .strip { display: none; }
+    main { grid-template-columns: 1fr; padding: 20px 16px; gap: 24px; }
+    .photo img { height: 34vh; }
+    .quote, .tags { max-width: none; width: 100%; }
+    .sp-card { min-width: 0; width: 90vw; }
+  }
 </style>
 </head>
 <body>
-<div id="bg"></div>
-<div class="stage">
+<div class="glow a"></div><div class="glow b"></div>
+<div class="app">
   <header>
-    <div class="judul" id="judul">&nbsp;</div>
-    <div class="sub" id="sub"></div>
-  </header>
-  <main>
-    <div class="welcome">
-      <div class="card idle show" id="card">
-        <div class="sd">Selamat Datang</div>
-        <div class="nama" id="cNama">Tamu Undangan</div>
-        <div class="ket" id="cKet">Terima kasih atas kehadiran Anda</div>
-        <div class="pax" id="cPax" style="display:none"></div>
-      </div>
+    <div class="h-left">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <div class="h-stack"><span class="h-top cz" id="hTempat">&nbsp;</span><span class="h-sub" id="hTanggal"></span></div>
     </div>
+    <div class="h-center cz" id="hHeader">Welcome to the Celebration</div>
+    <div class="h-right">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      <div class="h-stack"><span class="h-top cz" id="hJam">--.--</span><span class="h-sub" id="hZona">Waktu Setempat</span></div>
+      <button id="fs" title="Layar penuh"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </header>
+
+  <div class="strip">
+    <div class="l"><span class="dot-ping"></span><span class="k cz" id="sKicker">Wedding Reception</span><span class="v" id="sWaktu"></span></div>
+    <div class="mono cz" id="sMono">&amp;</div>
+    <div class="r"><span class="k cz">Meja Registrasi</span><span class="v" id="sMeja">Presensi QR</span></div>
+  </div>
+
+  <main>
+    <section class="hero">
+      <div class="photo" id="photoWrap">
+        <img id="photo" alt="" class="hide">
+        <div class="monogram hide" id="monogram"></div>
+        <div class="fade hide" id="photoFade"></div>
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="pill cz hide" id="photoPill">The Wedding Celebration</span>
+        <div class="over hide" id="photoOver"><div class="o1 cz">The Wedding Celebration</div><div class="o2 cz" id="oSapaan"></div></div>
+      </div>
+      <div class="kicker"><span class="ln"></span><span class="cz" id="sapaan"></span><span class="ln r"></span></div>
+      <h1 class="names" id="names">&nbsp;</h1>
+      <div class="meta cz" id="meta"></div>
+      <div class="quote" id="quote"><p id="qText"></p><small id="qSub"></small><span class="qtag" id="qTag"></span></div>
+      <div class="tags hide" id="tags">
+        <div class="cap cz"><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Capture &amp; Share</div>
+        <div class="list" id="tagList"></div>
+      </div>
+    </section>
+
     <aside>
-      <h3>Baru Saja Hadir</h3>
-      <ul id="recent"></ul>
+      <div class="panel">
+        <div class="p-head">
+          <div class="p-title cz"><svg class="ic" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 19c.8-3.4 3.4-5.3 6.5-5.3 1.3 0 2.5.3 3.5.9M14.5 17.5l2 2 4-4.5"/></svg><span>Presensi &amp; Daftar Tamu<span id="pTitleHadir"> Hadir</span><small>Digital Check-In Reception</small></span></div>
+          <div class="live cz"><span class="dot-ping"></span>Live Updates</div>
+        </div>
+        <div class="qr">
+          <div class="box"><svg viewBox="0 0 100 100"><rect fill="currentColor" x="10" y="10" width="24" height="24" rx="2"/><rect class="hole" x="14" y="14" width="16" height="16" rx="1"/><rect fill="currentColor" x="18" y="18" width="8" height="8"/><rect fill="currentColor" x="66" y="10" width="24" height="24" rx="2"/><rect class="hole" x="70" y="14" width="16" height="16" rx="1"/><rect fill="currentColor" x="74" y="18" width="8" height="8"/><rect fill="currentColor" x="10" y="66" width="24" height="24" rx="2"/><rect class="hole" x="14" y="70" width="16" height="16" rx="1"/><rect fill="currentColor" x="18" y="74" width="8" height="8"/><rect fill="currentColor" x="42" y="12" width="6" height="6"/><rect fill="currentColor" x="52" y="12" width="6" height="6"/><rect fill="currentColor" x="42" y="24" width="8" height="6"/><rect fill="currentColor" x="44" y="36" width="6" height="6"/><rect fill="currentColor" x="56" y="32" width="6" height="6"/><rect fill="currentColor" x="14" y="44" width="6" height="6"/><rect fill="currentColor" x="24" y="48" width="6" height="6"/><rect fill="currentColor" x="34" y="44" width="6" height="6"/><rect fill="currentColor" x="42" y="52" width="16" height="6"/><rect fill="currentColor" x="42" y="66" width="6" height="12"/><rect fill="currentColor" x="54" y="66" width="8" height="6"/><rect fill="currentColor" x="54" y="78" width="6" height="12"/><rect fill="currentColor" x="68" y="44" width="6" height="14"/><rect fill="currentColor" x="78" y="44" width="12" height="6"/><rect fill="currentColor" x="78" y="58" width="6" height="8"/><rect fill="currentColor" x="88" y="68" width="4" height="16"/><rect fill="currentColor" x="68" y="78" width="12" height="6"/></svg></div>
+          <div><div class="k cz">Pindai QR Check-In</div><p>Tunjukkan QR pada e-tiket atau kartu undangan Anda kepada panitia di meja registrasi.</p></div>
+        </div>
+        <div class="feed-h cz"><span>Tamu baru saja hadir</span><span class="auto">Autoscroll on</span></div>
+        <ul id="recent"><li class="empty">Menunggu tamu pertama&hellip;</li></ul>
+        <div class="total">
+          <div class="row">
+            <div class="k cz"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7M15 14.6c2.8-.3 5 1.2 5.6 4.4"/></svg><span id="tLabel">Total Kehadiran</span></div>
+            <div class="v" id="tVal"></div>
+          </div>
+          <div class="bar"><i id="tBar"></i></div>
+          <div class="ft"><span id="tPct"></span><span id="tOrang"></span></div>
+        </div>
+      </div>
+      <div class="wifi hide" id="wifi">
+        <div class="l"><svg class="ic" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.3a9.5 9.5 0 0 1 13 0M8.6 15.6a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+          <div class="h-stack"><span class="k cz">Venue Guest Wi-Fi</span><span class="ss" id="wSsid"></span></div></div>
+        <div class="pw" id="wPass"></div>
+      </div>
     </aside>
   </main>
-  <footer>
-    <div class="stat">Tamu hadir: <b id="sHadir">0</b> undangan · <b id="sOrang">0</b> orang</div>
-    <div class="brand"><img src="logo.png" alt=""><span>HaiMoment</span></div>
-  </footer>
 </div>
-<button id="fs">⛶ Layar penuh</button>
+
+<div id="spot"><div class="sp-card">
+  <div class="sp-k cz">Selamat Datang</div>
+  <div class="sp-rule"></div>
+  <div class="sp-n" id="spN"></div>
+  <div class="sp-s" id="spS"></div>
+  <div class="sp-p cz hide" id="spP"></div>
+  <div class="sp-t cz">Terima kasih atas kehadiran Anda</div>
+</div></div>
+<div class="brand"><img src="logo.png" alt="">HaiMoment</div>
 <div id="err"></div>
 
 <script>
@@ -79,65 +346,137 @@
   const P = new URLSearchParams(location.search);
   const KEY = P.get('k') || '';
   const API = P.get('api') || 'https://script.google.com/macros/s/AKfycbxtaeNS5hc3PEGmX7cjoM4Aa6HWpyPZLrxXKJVlmfvrfTJPcE0MskIc-Zop03eLvcH-0g/exec';
+  const PREVIEW = P.get('preview') === '1'; // dipakai iframe pratinjau di menu Layar Pembuka (tanpa server, data contoh)
   const SHOW_MS = 7000, SHOW_MS_BUSY = 4000;
-  let seq = 0, queue = [], showing = false, recent = [], started = false, lastStats = 0;
+  let seq = 0, queue = [], showing = false, recent = [], started = false, lastStats = 0, stats = { hadir: 0, orang: 0, undangan: 0 };
+
+  const esc = function(s) { const d = document.createElement('div'); d.innerText = s == null ? '' : s; return d.innerHTML; };
+  function jam(ts) { const m = String(ts || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + '.' + m[2] : ''; }
+
+  // Link Google Drive "bagikan" → link gambar langsung
+  function fotoUrl(u) {
+    u = String(u || '').trim();
+    const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/);
+    return m ? 'https://lh3.googleusercontent.com/d/' + m[1] + '=w1600' : u;
+  }
 
   async function call(fn, args) {
     const url = API + '?api=' + fn + '&d=' + encodeURIComponent(JSON.stringify(args)) + '&_=' + Date.now();
     const r = await fetch(url, { cache: 'no-store' });
     return r.json();
   }
-
   function fail(msg) { $('err').innerText = msg; $('err').style.display = 'flex'; }
+
+  // "Rizky & Pira" → nama dengan ampersand bergaya; inisial untuk monogram
+  function splitNames(judul) {
+    const parts = String(judul || '').split(/\s+(?:&|dan|and)\s+/i);
+    return parts.length === 2 ? parts : null;
+  }
 
   function applyInfo(info) {
     if (!info) return;
-    $('judul').innerText = info.judul || 'Selamat Datang';
-    $('sub').innerText = [info.hariTanggal, info.tempat].filter(Boolean).join('  ·  ');
-    document.title = (info.judul ? info.judul + ' - ' : '') + 'Layar Sambutan';
-    if (info.foto) { $('bg').style.backgroundImage = 'url("' + info.foto.replace(/"/g, '%22') + '")'; $('bg').classList.add('photo'); }
-    else { $('bg').style.backgroundImage = ''; $('bg').classList.remove('photo'); }
+    const s = info.set || {};
+    document.documentElement.setAttribute('data-tema', s.tema === 'mono' ? 'mono' : 'gold');
+    document.body.classList.toggle('no-list', s.daftar === false);
+    document.body.classList.toggle('no-count', s.jumlah === false);
+    const judul = info.judul || 'Selamat Datang';
+    const pair = splitNames(judul);
+    $('names').innerHTML = pair ? esc(pair[0]) + '<span class="amp">&amp;</span>' + esc(pair[1]) : esc(judul);
+    $('monogram').innerHTML = pair ? esc(pair[0].trim().charAt(0)) + '<i>&amp;</i>' + esc(pair[1].trim().charAt(0)) : esc(judul.trim().charAt(0));
+    $('sMono').innerHTML = pair ? esc(pair[0].trim().charAt(0) + '&' + pair[1].trim().charAt(0)) : esc(judul.trim().charAt(0));
+
+    const tempat = s.lokasi || info.tempat || '';
+    $('hTempat').innerText = tempat || judul;
+    $('hTanggal').innerText = info.hariTanggal || '';
+    $('hHeader').innerText = s.header || '';
+    $('hHeader').style.visibility = s.header ? '' : 'hidden';
+    $('sapaan').innerText = s.sapaan || '';
+    $('oSapaan').innerText = s.sapaan || '';
+    $('sKicker').innerText = 'Wedding Reception';
+    $('sWaktu').innerText = [info.waktu, tempat].filter(Boolean).join(' · ');
+    $('meta').innerHTML = [info.hariTanggal, tempat].filter(Boolean).map(function(x) { return '<span>' + esc(x) + '</span>'; }).join('<span class="sep"></span>');
+
+    $('qText').innerText = s.kutipan ? '“' + s.kutipan + '”' : '';
+    $('qSub').innerText = s.subKutipan || '';
+    $('quote').classList.toggle('hide', !s.kutipan && !s.subKutipan);
+
+    const tags = String(s.tagar || '').split(/[\s,]+/).map(function(t) { return t.replace(/^#+/, ''); }).filter(Boolean).slice(0, 3);
+    $('tags').classList.toggle('hide', !tags.length);
+    $('tagList').innerHTML = tags.map(function(t) { return '<span class="t"><b>#</b>' + esc(t) + '</span>'; }).join('');
+    $('qTag').innerText = tags.length ? '#' + tags[0] : '';
+
+    $('wifi').classList.toggle('hide', !s.wifi);
+    $('wSsid').innerText = s.wifi ? 'SSID: ' + s.wifi : '';
+    $('wPass').innerText = s.wifiPass ? 'Pass: ' + s.wifiPass : '';
+    $('wPass').classList.toggle('hide', !s.wifiPass);
+
+    const foto = fotoUrl(info.foto);
+    const img = $('photo');
+    if (foto) {
+      if (img.getAttribute('src') !== foto) img.src = foto;
+      img.classList.remove('hide');
+      $('monogram').classList.add('hide');
+    } else {
+      img.removeAttribute('src');
+      img.classList.add('hide');
+      $('monogram').classList.remove('hide');
+    }
+    ['photoFade', 'photoPill', 'photoOver'].forEach(function(id) { $(id).classList.toggle('hide', !foto); });
+    $('photoWrap').style.background = foto ? '' : 'none';
+    document.title = (info.judul ? info.judul + ' - ' : '') + 'Layar Pembuka';
+  }
+  $('photo').addEventListener('error', function() { this.classList.add('hide'); $('monogram').classList.remove('hide'); ['photoFade', 'photoPill', 'photoOver'].forEach(function(id) { $(id).classList.add('hide'); }); });
+
+  function renderStats() {
+    const u = stats.undangan || 0;
+    $('tVal').innerHTML = '<b>' + stats.hadir + '</b>' + (u ? ' <span>/ ' + u + ' Undangan</span>' : ' <span>Tamu Hadir</span>');
+    if (document.documentElement.getAttribute('data-tema') !== 'mono') $('tVal').innerHTML = stats.hadir + ' Tamu Hadir' + (u ? ' <span>dari ' + u + ' Undangan</span>' : '');
+    const pct = u ? Math.min(100, Math.round(stats.hadir / u * 100)) : 0;
+    $('tBar').style.width = pct + '%';
+    $('tPct').innerText = u ? 'Undangan hadir: ' + pct + '%' : '';
+    $('tOrang').innerText = stats.orang + ' orang';
   }
 
-  function jam(ts) { const m = String(ts || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + '.' + m[2] : ''; }
-
-  function addRecent(it) {
-    recent.unshift(it);
-    recent = recent.slice(0, 10);
-    $('recent').innerHTML = recent.map(function(x) {
-      const esc = function(s) { const d = document.createElement('div'); d.innerText = s || ''; return d.innerHTML; };
-      return '<li><div class="n">' + esc(x.nama) + '</div><div class="t">' + jam(x.t) + (x.ket ? ' · ' + esc(x.ket) : '') + '</div></li>';
+  const AV = ['✓', '★', '♥', '✦'];
+  function renderRecent() {
+    if (!recent.length) { $('recent').innerHTML = '<li class="empty">Menunggu tamu pertama&hellip;</li>'; return; }
+    $('recent').innerHTML = recent.map(function(x, i) {
+      const sub = [x.ket, x.pax > 1 ? x.pax + ' orang' : ''].filter(Boolean).join(' • ');
+      const tm = (i === 0 ? 'Baru saja' : 'Hadir') + ' (' + jam(x.t) + ')';
+      return '<li><span class="av">' + AV[i % AV.length] + '</span><div class="nm"><div class="n">' + esc(x.nama) + '</div>' + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div><span class="tm">' + tm + '</span></li>';
     }).join('');
   }
+  function addRecent(it) { recent.unshift(it); recent = recent.slice(0, 8); renderRecent(); fitRecent(); }
+  // Sembunyikan baris yang terpotong di bawah panel
+  function fitRecent() {
+    const ul = $('recent');
+    Array.prototype.forEach.call(ul.children, function(li) { li.style.visibility = ''; });
+    Array.prototype.forEach.call(ul.children, function(li) { if (li.offsetTop - ul.offsetTop + li.offsetHeight > ul.clientHeight + 1) li.style.visibility = 'hidden'; });
+  }
+  window.addEventListener('resize', fitRecent);
+  if (document.fonts) document.fonts.ready.then(fitRecent);
 
-  function setCard(it) {
-    const card = $('card');
-    card.classList.remove('show');
-    setTimeout(function() {
-      if (it) {
-        card.classList.remove('idle');
-        $('cNama').innerText = it.nama;
-        $('cKet').innerText = it.ket || '';
-        $('cPax').style.display = it.pax > 1 ? 'inline-block' : 'none';
-        $('cPax').innerText = it.pax + ' orang';
-      } else {
-        card.classList.add('idle');
-        $('cNama').innerText = 'Tamu Undangan';
-        $('cKet').innerText = 'Terima kasih atas kehadiran Anda';
-        $('cPax').style.display = 'none';
-      }
-      card.classList.add('show');
-    }, 450);
+  function spotlight(it) {
+    $('spN').innerText = it.nama;
+    $('spS').innerText = it.ket || '';
+    $('spP').classList.toggle('hide', !(it.pax > 1));
+    $('spP').innerText = it.pax + ' orang';
+    $('spot').classList.add('show');
   }
 
   // Tampilkan antrean satu per satu; kalau ramai, durasi per tamu dipersingkat
   function next() {
-    if (!queue.length) { showing = false; setCard(null); return; }
+    if (!queue.length) { showing = false; $('spot').classList.remove('show'); return; }
     showing = true;
     const it = queue.shift();
-    setCard(it);
+    spotlight(it);
     addRecent(it);
     setTimeout(next, queue.length ? SHOW_MS_BUSY : SHOW_MS);
+  }
+
+  function tick() {
+    const d = new Date();
+    $('hJam').innerText = String(d.getHours()).padStart(2, '0') + '.' + String(d.getMinutes()).padStart(2, '0') + ' WIB';
   }
 
   let inFlight = false;
@@ -152,7 +491,8 @@
       if (withStats) {
         lastStats = Date.now();
         applyInfo(res.info);
-        if (res.stats) { $('sHadir').innerText = res.stats.hadir; $('sOrang').innerText = res.stats.orang; }
+        if (res.stats) { stats = res.stats; renderStats(); }
+        fitRecent();
       }
       if (!started) {
         // Saat layar baru dibuka: isi daftar "baru saja hadir", jangan putar ulang sambutan lama
@@ -163,12 +503,44 @@
       if (res.items.length) {
         res.items.forEach(function(it) { queue.push(it); });
         seq = res.seq;
-        $('sHadir').innerText = (parseInt($('sHadir').innerText, 10) || 0) + res.items.length;
-        $('sOrang').innerText = (parseInt($('sOrang').innerText, 10) || 0) + res.items.reduce(function(n, x) { return n + (x.pax || 1); }, 0);
+        stats.hadir += res.items.length;
+        stats.orang += res.items.reduce(function(n, x) { return n + (x.pax || 1); }, 0);
+        renderStats();
         if (!showing) next();
       }
     } catch (e) { /* jaringan putus sesaat — coba lagi di polling berikutnya */ }
     finally { inFlight = false; }
+  }
+
+  // ---- Mode pratinjau: pengaturan dikirim lewat hash (#<json>), data tamu contoh ----
+  const DEMO = [
+    { nama: 'Keluarga Besar Handoko', ket: 'Meja 05', pax: 4, t: '18:50' },
+    { nama: 'Clarissa Wijaya', ket: 'Meja VIP 01', pax: 1, t: '18:58' },
+    { nama: 'Kevin Sanjaya & Rekan', ket: 'Meja 14', pax: 3, t: '19:03' },
+    { nama: 'Dr. Jessica & Rama Pratama', ket: 'Meja 08', pax: 2, t: '19:08' },
+    { nama: 'Bpk. Bambang Soedarmono & Ibu', ket: 'VIP Meja 02', pax: 2, t: '19:12' }
+  ];
+  function readHash() {
+    try { return JSON.parse(decodeURIComponent(location.hash.slice(1)) || '{}'); } catch (e) { return {}; }
+  }
+  function previewRender() {
+    const info = readHash();
+    applyInfo(info);
+    stats = { hadir: 148, orang: 231, undangan: 350 };
+    renderStats();
+    fitRecent();
+    if (P.get('spot') === '1') spotlight(DEMO[4]);
+  }
+  function startPreview() {
+    recent = [];
+    DEMO.forEach(addRecent);
+    previewRender();
+    window.addEventListener('hashchange', previewRender);
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.layarPreview) { applyInfo(e.data.layarPreview); renderStats(); fitRecent(); }
+      if (e.data && e.data.layarDemoSpot) { spotlight(DEMO[4]); setTimeout(function() { $('spot').classList.remove('show'); }, 3500); }
+    });
+    $('fs').classList.add('hide');
   }
 
   $('fs').addEventListener('click', function() {
@@ -176,9 +548,13 @@
     if (!document.fullscreenElement) (el.requestFullscreen || el.webkitRequestFullscreen || function() {}).call(el);
     else document.exitFullscreen();
   });
-  document.addEventListener('fullscreenchange', function() { $('fs').style.display = document.fullscreenElement ? 'none' : ''; });
+  document.addEventListener('fullscreenchange', function() { $('fs').style.visibility = document.fullscreenElement ? 'hidden' : ''; });
 
-  if (!KEY) { fail('Link layar tidak lengkap. Buka dari menu Presensi Tamu di aplikasi HaiMoment.'); return; }
+  const tema = P.get('tema');
+  if (tema === 'mono' || tema === 'gold') document.documentElement.setAttribute('data-tema', tema);
+  tick(); setInterval(tick, 10000);
+  if (PREVIEW) { startPreview(); return; }
+  if (!KEY) { fail('Link layar tidak lengkap. Buka dari menu Layar Pembuka di aplikasi HaiMoment.'); return; }
   poll();
   setInterval(poll, 3000);
 })();
