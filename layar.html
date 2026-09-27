@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Layar Pembuka - HaiMoment</title>
 <link rel="icon" href="logo.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -229,6 +230,13 @@
   .ig .pw { font-family: 'Playfair Display', serif; font-weight: 400; letter-spacing: .02em; }
   [data-tema="mono"] .ig .l .ic { color: var(--ink); }
   [data-tema="mono"] .ig .pw { font-family: 'Playfair Display', serif; }
+  /* Tiap akun IG: QR (dipindai kamera HP tamu) + @username yang bisa diklik */
+  .ig .hs { gap: .6vh 1vw; }
+  .igq { display: flex; flex-direction: column; align-items: center; gap: .6vh; text-decoration: none; color: inherit; }
+  .igq .qr { display: block; width: clamp(56px, 9vh, 150px); height: clamp(56px, 9vh, 150px); background: #fff; border-radius: 6px; padding: 4px; box-sizing: border-box; }
+  .igq .qr svg { display: block; width: 100%; height: 100%; }
+  .igq .pw { font-size: clamp(10px, .8vw, 16px); padding: .4vh .6vw; }
+  .igq:hover .pw { text-decoration: underline; }
 
   /* ---- Sorotan tamu baru (muncul setiap ada scan) ---- */
   #spot { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .6s ease;
@@ -335,7 +343,7 @@
       </div>
       <div class="wifi ig hide" id="ig">
         <div class="l"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".9" fill="currentColor"/></svg>
-          <div class="h-stack"><span class="k cz">Tag Story Kami</span><span class="ss">Bagikan momen di Instagram</span></div></div>
+          <div class="h-stack"><span class="k cz">Tag Story Kami</span><span class="ss">Pindai QR, lalu tag kami di Story</span></div></div>
         <div class="hs" id="igList"></div>
       </div>
     </aside>
@@ -382,6 +390,15 @@
   function fail(msg) { $('err').innerText = msg; $('err').style.display = 'flex'; }
 
   // "Rizky & Pira" → nama dengan ampersand bergaya; inisial untuk monogram
+  // QR sebagai SVG (tanpa gambar eksternal); kosong jika library belum termuat
+  function qrSvg(text) {
+    if (typeof qrcode === 'undefined') return '';
+    const qr = qrcode(0, 'M'); qr.addData(text); qr.make();
+    const n = qr.getModuleCount(); let d = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += 'M' + c + ' ' + r + 'h1v1h-1z';
+    return '<svg viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges"><path d="' + d + '" fill="#111"/></svg>';
+  }
+
   function splitNames(judul) {
     const parts = String(judul || '').split(/\s+(?:&|dan|and)\s+/i);
     return parts.length === 2 ? parts : null;
@@ -399,7 +416,10 @@
     document.querySelector('aside').classList.toggle('slim', s.daftar === false);
     document.body.classList.toggle('no-aside', !panelOn && !s.wifi && !ig.length);
     $('ig').classList.toggle('hide', !ig.length);
-    $('igList').innerHTML = ig.map(function(h) { return '<span class="pw">@' + esc(h) + '</span>'; }).join('');
+    $('igList').innerHTML = ig.map(function(h) {
+      const url = 'https://instagram.com/' + encodeURIComponent(h);
+      return '<a class="igq" href="' + url + '" target="_blank" rel="noopener"><span class="qr">' + qrSvg(url) + '</span><span class="pw">@' + esc(h) + '</span></a>';
+    }).join('');
     const judul = info.judul || 'Selamat Datang';
     const pair = splitNames(judul);
     $('names').innerHTML = pair ? esc(pair[0]) + '<span class="amp">&amp;</span>' + esc(pair[1]) : esc(judul);
