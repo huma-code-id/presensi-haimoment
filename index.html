@@ -87,7 +87,8 @@
         </div>
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 mb-1"><i class="fas fa-barcode mr-1"></i> Scanner USB / Bluetooth</label>
-          <input id="usbInput" class="inp text-sm" autocomplete="off" placeholder="Klik di sini, lalu scan QR dengan alat scanner">
+          <input id="usbInput" class="inp text-sm" autocomplete="off" placeholder="Langsung tembak QR — tidak perlu klik kolom ini">
+          <p class="text-[11px] text-slate-400 mt-1">Hasil scan alat ditangkap otomatis selama tab <b>Scan QR</b> terbuka.</p>
         </div>
         <label class="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 cursor-pointer">
           <input type="checkbox" id="askPax" class="mt-1 w-4 h-4">
@@ -361,6 +362,7 @@
   // Keyboard (laptop + scanner USB): tekan 1-9 untuk memilih jumlah orang saat kartu terbuka
   document.addEventListener('keydown', function(e) {
     if ($('resultOverlay').classList.contains('d-none') || !$('resBody').querySelector('[data-paxn]') || Swal.isVisible()) return;
+    if (wedgeBuf.length > 1) return; // angka bagian dari hasil scan alat, bukan tombol jumlah orang
     const n = parseInt(e.key, 10);
     if (n >= 1 && n <= 9) { e.preventDefault(); pickPax(n, true); }
   });
@@ -489,14 +491,43 @@
     img.src = url;
   });
 
-  // Scanner USB/Bluetooth bekerja seperti keyboard: mengetik isi QR lalu Enter
+  // Scanner USB/Bluetooth bekerja seperti keyboard: mengetik isi QR sangat cepat lalu Enter
+  function scanDariAlat(v) {
+    // Kartu hasil sebelumnya ditutup otomatis, kecuali masih menunggu pilihan jumlah orang
+    if (!$('resultOverlay').classList.contains('d-none')) {
+      if ($('resBody').querySelector('[data-paxn]')) { beep(false); return; }
+      closeResult();
+    }
+    lastText = '';
+    onDecoded(v);
+  }
   $('usbInput').addEventListener('keydown', function(e) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     const v = this.value; this.value = '';
-    lastText = '';
-    onDecoded(v);
+    scanDariAlat(v);
   });
+  // Tangkap ketikan cepat dari alat walau kolom di atas tidak sedang diklik (tab Scan saja)
+  let wedgeBuf = '', wedgeAt = 0;
+  document.addEventListener('keydown', function(e) {
+    const now = Date.now();
+    if (now - wedgeAt > 80) wedgeBuf = '';
+    wedgeAt = now;
+    const ketik = e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey;
+    const lanjutan = wedgeBuf.length > 0;
+    if (ketik) wedgeBuf += e.key;
+    if (currentTab !== 'scan' || $('mainPage').classList.contains('d-none') || Swal.isVisible()) return;
+    const t = e.target;
+    if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'checkbox'))) return; // termasuk usbInput: ditangani sendiri
+    if (e.key === 'Enter') {
+      const v = wedgeBuf; wedgeBuf = '';
+      if (v.length < 4) return;
+      e.preventDefault();
+      scanDariAlat(v);
+    } else if (ketik && lanjutan) {
+      e.preventDefault(); // cegah spasi/Enter mengaktifkan tombol yang sedang fokus
+    }
+  }, true);
 
   // ---------- CARI NAMA ----------
   function renderSearch() {
