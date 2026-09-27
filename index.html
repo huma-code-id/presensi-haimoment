@@ -88,7 +88,7 @@
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 mb-1"><i class="fas fa-barcode mr-1"></i> Scanner USB / Bluetooth</label>
           <input id="usbInput" class="inp text-sm" autocomplete="off" placeholder="Langsung tembak QR — tidak perlu klik kolom ini">
-          <p class="text-[11px] text-slate-400 mt-1">Hasil scan alat ditangkap otomatis selama tab <b>Scan QR</b> terbuka.</p>
+          <div id="alatInfo" class="mt-1.5 text-[12px] rounded-lg px-2.5 py-1.5 bg-slate-50 text-slate-500 break-all"><i class="fas fa-circle text-[8px] mr-1 text-slate-300"></i> Menunggu scan dari alat…</div>
         </div>
         <label class="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 cursor-pointer">
           <input type="checkbox" id="askPax" class="mt-1 w-4 h-4">
@@ -491,8 +491,12 @@
     img.src = url;
   });
 
-  // Scanner USB/Bluetooth bekerja seperti keyboard: mengetik isi QR sangat cepat lalu Enter
+  // Scanner USB/Bluetooth bekerja seperti keyboard: mengetik isi QR sangat cepat lalu Enter/Tab
+  // (atau tanpa akhiran). Ditangkap selama tab Scan terbuka, tanpa perlu klik kolom.
   function scanDariAlat(v) {
+    v = String(v || '').trim();
+    if (!v) return;
+    alatInfo('ok', 'Terbaca: ' + v);
     // Kartu hasil sebelumnya ditutup otomatis, kecuali masih menunggu pilihan jumlah orang
     if (!$('resultOverlay').classList.contains('d-none')) {
       if ($('resBody').querySelector('[data-paxn]')) { beep(false); return; }
@@ -501,31 +505,50 @@
     lastText = '';
     onDecoded(v);
   }
-  $('usbInput').addEventListener('keydown', function(e) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const v = this.value; this.value = '';
-    scanDariAlat(v);
-  });
-  // Tangkap ketikan cepat dari alat walau kolom di atas tidak sedang diklik (tab Scan saja)
-  let wedgeBuf = '', wedgeAt = 0;
+  function alatInfo(tipe, teks) {
+    const warna = { ok: ['bg-green-50 text-green-700', 'text-green-500'], baca: ['bg-blue-50 text-blue-700', 'text-blue-500'], warn: ['bg-amber-50 text-amber-800', 'text-amber-500'], idle: ['bg-slate-50 text-slate-500', 'text-slate-300'] }[tipe];
+    $('alatInfo').className = 'mt-1.5 text-[12px] rounded-lg px-2.5 py-1.5 break-all ' + warna[0];
+    $('alatInfo').innerHTML = '<i class="fas fa-circle text-[8px] mr-1 ' + warna[1] + '"></i> ' + escapeHTML(teks);
+  }
+  // Jika jendela/tab lain yang aktif (mis. address bar), ketikan alat tidak sampai ke halaman ini
+  function cekFokus() {
+    if (!document.hasFocus()) alatInfo('warn', 'Halaman tidak aktif — klik sekali di area halaman ini agar hasil scan masuk.');
+    else if (/tidak aktif/.test($('alatInfo').textContent)) alatInfo('idle', 'Siap. Silakan tembak QR tamu.');
+  }
+  window.addEventListener('blur', cekFokus);
+  window.addEventListener('focus', cekFokus);
+  setInterval(cekFokus, 2000);
+
+  const WEDGE_GAP = 100; // ms antar karakter; alat mengetik jauh lebih cepat dari manusia
+  let wedgeBuf = '', wedgeAt = 0, wedgeTimer = null;
   document.addEventListener('keydown', function(e) {
     const now = Date.now();
-    if (now - wedgeAt > 80) wedgeBuf = '';
+    if (now - wedgeAt > WEDGE_GAP) wedgeBuf = '';
     wedgeAt = now;
+    clearTimeout(wedgeTimer);
     const ketik = e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey;
     const lanjutan = wedgeBuf.length > 0;
     if (ketik) wedgeBuf += e.key;
     if (currentTab !== 'scan' || $('mainPage').classList.contains('d-none') || Swal.isVisible()) return;
-    const t = e.target;
-    if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'checkbox'))) return; // termasuk usbInput: ditangani sendiri
-    if (e.key === 'Enter') {
-      const v = wedgeBuf; wedgeBuf = '';
-      if (v.length < 4) return;
+    const t = e.target, diUsb = !!(t && t.id === 'usbInput');
+    if (!diUsb && t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'checkbox'))) return;
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      const v = wedgeBuf.length >= 4 ? wedgeBuf : (diUsb && e.key === 'Enter' ? $('usbInput').value : '');
+      wedgeBuf = '';
+      if (!v.trim()) return;
       e.preventDefault();
+      $('usbInput').value = '';
       scanDariAlat(v);
     } else if (ketik && lanjutan) {
-      e.preventDefault(); // cegah spasi/Enter mengaktifkan tombol yang sedang fokus
+      if (!diUsb) e.preventDefault(); // cegah spasi mengaktifkan tombol yang sedang fokus
+      if (wedgeBuf.length >= 3) alatInfo('baca', 'Menerima: ' + wedgeBuf);
+      // Alat tanpa akhiran Enter/Tab: kirim otomatis saat ketikan cepat berhenti
+      wedgeTimer = setTimeout(function() {
+        if (wedgeBuf.length < 6) return;
+        const v = wedgeBuf; wedgeBuf = '';
+        $('usbInput').value = '';
+        scanDariAlat(v);
+      }, 300);
     }
   }, true);
 
