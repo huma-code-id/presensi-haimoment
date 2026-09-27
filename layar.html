@@ -362,7 +362,7 @@
   const API = P.get('api') || 'https://script.google.com/macros/s/AKfycbxtaeNS5hc3PEGmX7cjoM4Aa6HWpyPZLrxXKJVlmfvrfTJPcE0MskIc-Zop03eLvcH-0g/exec';
   const PREVIEW = P.get('preview') === '1'; // dipakai iframe pratinjau di menu Layar Pembuka (tanpa server, data contoh)
   const SHOW_MS = 7000, SHOW_MS_BUSY = 4000;
-  let seq = 0, queue = [], showing = false, recent = [], started = false, lastStats = 0, stats = { hadir: 0, orang: 0, undangan: 0 };
+  let seq = 0, queue = [], showing = false, recent = [], started = false, lastStats = 0, lastClear = 0, stats = { hadir: 0, orang: 0, undangan: 0 };
 
   const esc = function(s) { const d = document.createElement('div'); d.innerText = s == null ? '' : s; return d.innerHTML; };
   function jam(ts) { const m = String(ts || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + '.' + m[2] : ''; }
@@ -522,6 +522,16 @@
       const res = await call('layarFeed', [KEY, seq, withStats]);
       if (!res.success) { if (res.invalidLink || !started) fail(res.message || 'Link layar tidak valid'); return; }
       $('err').style.display = 'none';
+      // Klien menekan "Kosongkan Daftar" — bersihkan daftar & antrean, lalu ambil ulang total kehadiran
+      if (started && (res.clear || 0) !== lastClear) {
+        lastClear = res.clear || 0;
+        queue = []; recent = []; renderRecent();
+        $('spot').classList.remove('show');
+        lastStats = 0; // total kehadiran diambil ulang di polling berikutnya
+        seq = res.seq;
+        return;
+      }
+      lastClear = res.clear || 0;
       if (withStats) {
         lastStats = Date.now();
         await resolveFoto(res.info);
