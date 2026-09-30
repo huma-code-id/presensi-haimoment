@@ -263,6 +263,15 @@
     try { if (navigator.vibrate) navigator.vibrate(ok ? 80 : [120, 60, 120]); } catch (e) {}
   }
 
+  // Cara tamu tercatat hadir (scan pertama): kode batang = undangan fisik, QR/link = undangan digital
+  function metodeInfo(g) {
+    const map = { 'Kode Batang': ['Undangan Fisik', 'bg-amber-100 text-amber-800', 'fa-barcode'], 'QR / Link': ['Undangan Link / Web', 'bg-blue-100 text-blue-700', 'fa-qrcode'], 'Manual': ['Dicatat manual', 'bg-slate-100 text-slate-600', 'fa-keyboard'], 'Walk-in': ['Walk-in', 'bg-indigo-100 text-indigo-700', 'fa-user-plus'] };
+    const v = map[g.metode];
+    const jenis = g.jenis && g.jenis !== 'Digital' ? '<p class="text-[11px] text-slate-400 mt-1">Jenis undangan tamu: ' + (g.jenis === 'Keduanya' ? 'Fisik + Digital' : g.jenis) + '</p>' : '';
+    if (!v) return jenis ? '<div class="text-center">' + jenis + '</div>' : '';
+    return '<div class="text-center"><span class="inline-block text-sm font-semibold rounded-full px-4 py-1.5 ' + v[1] + '"><i class="fas ' + v[2] + ' mr-1"></i>' + v[0] + '</span>' + jenis + '</div>';
+  }
+
   function showResult(res) {
     clearTimeout(resultTimer);
     $('resClose').classList.remove('d-none');
@@ -276,7 +285,7 @@
       $('resTitle').innerText = (g.tipe === 'Walk-in' ? 'Walk-in · ' : '') + 'Hadir · ' + jam(g.waktuHadir);
       $('resNama').innerText = g.nama; $('resKet').innerText = g.ket || '';
       const ask = askPaxOn() && g.tipe !== 'Walk-in';
-      body.innerHTML = paxBox(g, ask) + '<button data-undo="' + escapeHTML(g.id) + '" class="w-full text-sm text-red-600 border border-red-200 rounded-xl py-2"><i class="fas fa-undo mr-1"></i> Batalkan (salah tamu)</button>';
+      body.innerHTML = metodeInfo(g) + paxBox(g, ask) + '<button data-undo="' + escapeHTML(g.id) + '" class="w-full text-sm text-red-600 border border-red-200 rounded-xl py-2"><i class="fas fa-undo mr-1"></i> Batalkan (salah tamu)</button>';
       beep(true);
       // Mode "selalu tanya": kartu menunggu pilihan jumlah orang; mode biasa: tutup otomatis
       $('resClose').classList.toggle('d-none', ask);
@@ -286,7 +295,7 @@
       $('resIcon').className = 'fas fa-triangle-exclamation text-4xl';
       $('resTitle').innerText = 'Sudah hadir pukul ' + jam(g.waktuHadir);
       $('resNama').innerText = g.nama; $('resKet').innerText = g.ket || '';
-      body.innerHTML = '<p class="text-sm text-slate-500 text-center">QR ini sudah pernah di-scan (' + escapeHTML(g.waktuHadir) + ').</p>' + paxBox(g, false);
+      body.innerHTML = '<p class="text-sm text-slate-500 text-center">Undangan ini sudah pernah di-scan (' + escapeHTML(g.waktuHadir) + ').</p>' + metodeInfo(g) + paxBox(g, false);
       beep(false);
     } else if (res.result === 'multi') {
       head.classList.add('res-already');
