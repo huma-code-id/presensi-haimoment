@@ -457,7 +457,7 @@
     lastTick = ts;
     const v = $('camVideo');
     if (v.readyState < 2 || !v.videoWidth) return;
-    decodeFrom(v, v.videoWidth, v.videoHeight, 640);
+    if (!decodeFrom(v, v.videoWidth, v.videoHeight, 640) && (++tickN % 2 === 0)) bacaBarcode(v, v.videoWidth, v.videoHeight, 1024);
   }
 
   function decodeFrom(src, w, h, maxDim) {
@@ -470,6 +470,55 @@
     const code = jsQR(img.data, cw, ch, { inversionAttempts: 'dontInvert' });
     if (code && code.data) { onDecoded(code.data); return true; }
     return false;
+  }
+
+  // ---------- BARCODE (kode batang di label nama = 8 karakter kode tamu, Code 128) ----------
+  // Chrome Android punya BarcodeDetector bawaan; browser lain memuat ZXing (hanya saat dibutuhkan).
+  const bd = (function() { try { return 'BarcodeDetector' in window ? new BarcodeDetector({ formats: ['code_128'] }) : null; } catch (e) { return null; } })();
+  let zxP = null, zxReader = null, bcBusy = false, tickN = 0;
+  function loadZx() {
+    if (window.ZXing) return Promise.resolve(true);
+    if (!zxP) zxP = new Promise(function(res) {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+      s.onload = function() { res(!!window.ZXing); };
+      s.onerror = function() { zxP = null; res(false); };
+      document.head.appendChild(s);
+    });
+    return zxP;
+  }
+  function zxDecode(c) {
+    if (!window.ZXing) return '';
+    try {
+      if (!zxReader) {
+        zxReader = new ZXing.MultiFormatReader();
+        const h = new Map();
+        h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.CODE_128]);
+        h.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        zxReader.setHints(h);
+      }
+      return zxReader.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(c)))).getText();
+    } catch (e) { return ''; }
+  }
+  async function barcodeFrom(src, w, h, maxDim) {
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+    c.getContext('2d', { willReadFrequently: true }).drawImage(src, 0, 0, c.width, c.height);
+    let t = '';
+    if (bd) { try { const r = await bd.detect(c); if (r.length) t = r[0].rawValue; } catch (e) { /* lanjut ke ZXing */ } }
+    if (!t) { await loadZx(); t = zxDecode(c); }
+    t = String(t || '').trim();
+    return /^[0-9a-f]{8}$/i.test(t) ? t : '';
+  }
+  async function bacaBarcode(v, w, h, d) {
+    if (bcBusy) return;
+    bcBusy = true;
+    try { const t = await barcodeFrom(v, w, h, d); if (t && scanning) onDecoded(t); } finally { bcBusy = false; }
+  }
+  async function bacaBarcodeFoto(img) {
+    for (const d of [1200, 2000]) { const t = await barcodeFrom(img, img.naturalWidth, img.naturalHeight, d); if (t) return t; }
+    return '';
   }
 
   $('btnCamStart').addEventListener('click', startCam);
@@ -485,7 +534,10 @@
       lastText = '';
       // coba beberapa resolusi — QR kecil di foto besar kadang baru terbaca di resolusi lebih tinggi
       const ok = [800, 1400, 2000].some(function(d) { return decodeFrom(img, img.naturalWidth, img.naturalHeight, d); });
-      if (!ok) Swal.fire('QR tidak terbaca', 'Foto QR lebih dekat, tegak lurus, dan tidak buram.', 'warning');
+      if (ok) return;
+      bacaBarcodeFoto(img).then(function(t) {
+        if (t) onDecoded(t); else Swal.fire('QR / barcode tidak terbaca', 'Foto QR atau barcode lebih dekat, tegak lurus, dan tidak buram.', 'warning');
+      });
     };
     img.onerror = function() { URL.revokeObjectURL(url); Swal.fire('Gagal', 'File gambar tidak bisa dibaca.', 'error'); };
     img.src = url;
